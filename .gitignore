@@ -1,0 +1,29 @@
+# Token do bot
+.env
+config.json
+token.txt
+
+# Arquivos Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Dados locais
+conversations.json
+lembretes.json
+cogs/imggen.py
+start.bat
+start.vbs
+ComfyUI/
+cookies/
+downloads/
+*.mp4
+*.mp3
+*.wav
+
+
+# IDEs
+.vscode/
+.idea/
+
+# Outros
