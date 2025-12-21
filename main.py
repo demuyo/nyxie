@@ -3,6 +3,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from flask import Flask
 from threading import Thread
+from waitress import serve
 
 load_dotenv()
 
@@ -10,7 +11,6 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 
 intents = discord.Intents.default()
 intents.message_content = True
-app = Flask('')
 
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 
@@ -37,20 +37,22 @@ COMANDOS_SERVIDOR_ONLY = [
 
     # Outros
     'userinfo'
-
 ]
+
+# ====== KEEP-ALIVE (WAITRESS) ======
+app = Flask('')
 
 @app.route('/')
 def home():
-    return "Bot online!"
+    return "nyxie online :3"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    serve(app, host='0.0.0.0', port=8080, threads=4)
 
 def keep_alive():
     t = Thread(target=run)
+    t.daemon = True
     t.start()
-
 
 # ====== CHECK GLOBAL ======
 @bot.check
@@ -78,7 +80,7 @@ async def load_cogs():
         "cogs.gens",            # Fordevs
         "cogs.status",          # Cuida do status do bot
         "cogs.utils",           # defs pra usar nas cogs
-        "cogs.utilities",       #  !baixar, !search
+        "cogs.utilities",       # !baixar, !search
         "cogs.misc",
         "cogs.conversation",
         "cogs.downloader",
@@ -128,8 +130,8 @@ async def on_command_error(ctx, error):
     await ctx.send(embed=embed, delete_after=5)
 
 async def main():
-    await load_cogs()
     keep_alive()
+    await load_cogs()
     await bot.start(TOKEN)
 
 asyncio.run(main())

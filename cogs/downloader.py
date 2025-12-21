@@ -1,13 +1,28 @@
-import yt_dlp
-import os
-import asyncio
-import discord
+import yt_dlp, os, asyncio, discord, requests, re, shutil, time, subprocess, tempfile
 from discord.ext import commands
-import requests
-import re
-import shutil
-import time
-import subprocess
+from dotenv import load_dotenv
+
+load_dotenv()
+
+YOUTUBE_COOKIES = os.getenv('YOUTUBE_COOKIES', None)
+TIKTOK_COOKIES = os.getenv('TIKTOK_COOKIES', None)
+
+def get_cookie_path(platform):
+    """Retorna caminho do cookie (env ou local)"""
+    env_var = f'{platform.upper()}_COOKIES'
+    cookies_env = os.getenv(env_var)
+    
+    if cookies_env:
+        temp = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt')
+        temp.write(cookies_env)
+        temp.close()
+        return temp.name
+    
+    local_path = f'cookies/cookies_{platform}.txt'
+    if os.path.exists(local_path):
+        return local_path
+    
+    return None
 
 def nome_seguro(texto, mensagem_id):
     """Gera nome de arquivo seguro removendo caracteres especiais"""
@@ -71,24 +86,26 @@ def baixar_video(url, formato='mp4'):
     """Baixa vídeo/áudio com retry e conversão automática"""
     os.makedirs('downloads', exist_ok=True)
 
-    cookie_file = 'cookies/cookies_tiktok.txt'
-    
+    # ====== PEGA COOKIE (ENV OU LOCAL) ======
+    cookie_file = None
     if 'youtube.com' in url or 'youtu.be' in url:
-        cookie_file = 'cookies/cookies_youtube.txt'
+        cookie_file = get_cookie_path('youtube')
     elif 'tiktok.com' in url:
-        cookie_file = 'cookies/cookies_tiktok.txt'
+        cookie_file = get_cookie_path('tiktok')
 
     ydl_opts = {
         'outtmpl': 'downloads/temp_%(title)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
         'ffmpeg_location': r'C:\ffmpeg\bin',
-        'cookiefile': cookie_file,
         'retries': 10,
         'fragment_retries': 10,
         'file_access_retries': 10,
         'extractor_retries': 10,
     }
+
+    if cookie_file:
+        ydl_opts['cookiefile'] = cookie_file
 
     # Configurações por formato
     if formato == "mp3":
@@ -229,6 +246,14 @@ def baixar_video(url, formato='mp4'):
     except Exception as e:
         print(f"❌ Erro yt-dlp: {e}")
         return False, None
+    
+    finally:
+        # ====== LIMPA ARQUIVO TEMPORÁRIO ======
+        if cookie_file and '/tmp' in cookie_file or (cookie_file and 'AppData\\Local\\Temp' in cookie_file):
+            try:
+                os.remove(cookie_file)
+            except:
+                pass
 
 def upload_catbox_seguro(caminho, max_tentativas=3):
     """Upload pro Catbox com retry"""
