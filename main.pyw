@@ -1,6 +1,8 @@
 import discord, asyncio, os
 from discord.ext import commands
 from dotenv import load_dotenv
+from flask import Flask
+from threading import Thread
 
 load_dotenv()
 
@@ -8,6 +10,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 
 intents = discord.Intents.default()
 intents.message_content = True
+app = Flask('')
 
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 
@@ -36,6 +39,18 @@ COMANDOS_SERVIDOR_ONLY = [
     'userinfo'
 
 ]
+
+@app.route('/')
+def home():
+    return "Bot online!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
 
 # ====== CHECK GLOBAL ======
 @bot.check
@@ -114,6 +129,7 @@ async def on_command_error(ctx, error):
 
 async def main():
     await load_cogs()
+    keep_alive()
     await bot.start(TOKEN)
 
 asyncio.run(main())
