@@ -41,37 +41,38 @@ class Geral(commands.Cog):
                 # Downloads privados
                 downloads = (
                     "`!arquivos` - lista arquivos salvos na pasta downloads\n"
-                    "`!deletar` `(urls...)` - download em lote\n"
-                    "`!clrdl` `(urls...)` - download em lote"
+                    "`!deletar` `(arquivo)` - deleta arquivo específico\n"
+                    "`!clrdl` - limpa pasta de downloads"
                 )
                 embed.add_field(name="downloads", value=downloads, inline=False)
-                
+
                 # Gerenciamento do bot
                 bot_cmds = (
-                    "`!-` - - -\n"
-                    "`!-` - - -\n"
-                    "`!-` - - -"
+                    "`!restart` - reinicia o bot\n"
+                    "`!update` - git pull e reinicia\n"
+                    "`!logs` `[quantidade]` - mostra últimos logs"
                 )
                 embed.add_field(name="bot", value=bot_cmds, inline=False)
-                
-                # Debug
+
+                # Debug/Dev
                 debug = (
-                    "`!-` - - -\n"
-                    "`!-` - - -\n"
-                    "`!-` - - -"
+                    "`!eval` `(código)` - executa código python\n"
+                    "`!broadcast` `(msg)` - anuncia em todos servidores"
                 )
                 embed.add_field(name="debug", value=debug, inline=False)
-                
-                # Status
-                status = (
-                    "`!-` - - -\n"
-                    "`!-` - - -\n"
-                    "`!-` - - -"
+
+                # Blacklist/Config
+                config = (
+                    "`!blacklist` `(user/guild)` `(id)` `[motivo]` - bloqueia user/servidor\n"
+                    "`!unblacklist` `(user/guild)` `(id)` - remove da blacklist\n"
+                    "`!blacklisted` - lista bloqueados\n"
+                    "`!setprefix` `(prefix)` - muda prefix do servidor\n"
+                    "`!resetprefix` - reseta prefix"
                 )
-                embed.add_field(name="status", value=status, inline=False)
-                
+                embed.add_field(name="config", value=config, inline=False)
+                    
                 embed.set_footer(text="esses comandos são só seus <3")
-                # ====== ENVIA NA DM ======
+                    # ====== ENVIA NA DM ======
                 try:
                     await ctx.author.send(embed=embed)
                     

@@ -26,4 +26,7 @@ downloads/
 .vscode/
 .idea/
 
-# Outros
+# Owner data
+blacklist.json
+prefixes.json
+logs_temp.txt

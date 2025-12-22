@@ -34,7 +34,7 @@ class AIActions(commands.Cog):
                 r'(?:mostra|lista|quais)(?:.*?)comandos',
             ],
             'clima': [
-                r'(?:qual|como)(?:.*?)(?:clima|tempo)(?:.*?)(em |de )?(.+)',
+                r'(?:qual|como|quantos)(?:.*?)(?:está|hoje|tá)(?:clima|temperatura|tempo)(?:.*?)(em |de )?(.+)',
             ]
         }
     

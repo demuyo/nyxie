@@ -12,7 +12,15 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
+def get_prefix(bot, message):
+    """Retorna prefix customizado ou padrão"""
+    if message.guild:
+        owner_cog = bot.get_cog('Owner')
+        if owner_cog and str(message.guild.id) in owner_cog.prefixes:
+            return owner_cog.prefixes[str(message.guild.id)]
+    return '!'
+
+bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None)
 
 # ====== COMANDOS QUE SÓ FUNCIONAM EM SERVIDOR ======
 COMANDOS_SERVIDOR_ONLY = [
@@ -84,8 +92,8 @@ async def load_cogs():
         "cogs.misc",
         "cogs.conversation",
         "cogs.downloader",
-        #"cogs.imggen",
         "cogs.aiactions",
+        "cogs.owner",        
         "cogs.moderation",
     ]
     
