@@ -1,11 +1,5 @@
 import yt_dlp, os, asyncio, discord, requests, re, shutil, time, subprocess, tempfile
 from discord.ext import commands
-from dotenv import load_dotenv
-
-load_dotenv()
-
-YOUTUBE_COOKIES = os.getenv('YOUTUBE_COOKIES', None)
-TIKTOK_COOKIES = os.getenv('TIKTOK_COOKIES', None)
 
 def get_cookie_path(platform):
     """Retorna caminho do cookie (env ou local)"""
