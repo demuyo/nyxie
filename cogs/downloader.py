@@ -597,5 +597,49 @@ class Downloader(commands.Cog):
         except:
             await ctx.send("❌ cancelado")
 
+    @commands.command()
+    @commands.is_owner()
+    async def debugenv(self, ctx):
+        """Mostra variáveis de ambiente (CUIDADO - só owner!)"""
+        import os
+        
+        embed = discord.Embed(title="🔍 Debug Variáveis de Ambiente", color=0xff9900)
+        
+        # Checa cookies
+        yt_exists = 'YOUTUBE_COOKIES' in os.environ
+        tt_exists = 'TIKTOK_COOKIES' in os.environ
+        
+        yt_len = len(os.getenv('YOUTUBE_COOKIES', ''))
+        tt_len = len(os.getenv('TIKTOK_COOKIES', ''))
+        
+        embed.add_field(
+            name="YOUTUBE_COOKIES",
+            value=f"{'✅ Existe' if yt_exists else '❌ Não existe'}\n{yt_len} caracteres",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="TIKTOK_COOKIES",
+            value=f"{'✅ Existe' if tt_exists else '❌ Não existe'}\n{tt_len} caracteres",
+            inline=False
+        )
+        
+        # Lista TODAS as variáveis (sem mostrar valores)
+        all_vars = list(os.environ.keys())
+        vars_text = "\n".join([f"• {var}" for var in all_vars if 'COOK' in var.upper() or 'YT' in var.upper() or 'TIK' in var.upper()])
+        
+        if vars_text:
+            embed.add_field(name="Variáveis relacionadas", value=f"```{vars_text}```", inline=False)
+        else:
+            embed.add_field(name="Variáveis relacionadas", value="❌ Nenhuma encontrada", inline=False)
+        
+        embed.add_field(
+            name="Total de variáveis",
+            value=f"{len(all_vars)} variáveis no ambiente",
+            inline=False
+        )
+        
+        await ctx.send(embed=embed)
+
 async def setup(bot):
     await bot.add_cog(Downloader(bot))
