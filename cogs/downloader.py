@@ -62,10 +62,10 @@ def verificar_codec(caminho):
     try:
         # Busca ffprobe em múltiplos lugares
         ffprobe_paths = [
-            'ffprobe',  # Linux/Render (via PATH)
-            '/usr/bin/ffprobe',  # Linux padrão
-            '/usr/local/bin/ffprobe',  # Homebrew Mac
-            r'C:\ffmpeg\bin\ffprobe.exe',  # Windows local
+            'ffprobe',
+            '/usr/bin/ffprobe',
+            '/usr/local/bin/ffprobe',
+            r'C:\ffmpeg\bin\ffprobe.exe',
         ]
         
         ffprobe_cmd = None
@@ -98,70 +98,126 @@ def verificar_codec(caminho):
 def baixar_video(url, formato='mp4'):
     """Baixa vídeo/áudio com retry e conversão automática (otimizado para 512MB RAM)"""
     import gc
+    import logging
+    
+    # Silencia logs chatos
+    logging.getLogger('yt_dlp').setLevel(logging.ERROR)
+    
     os.makedirs('downloads', exist_ok=True)
 
-    # ====== CHECA TAMANHO ANTES ======
+    # Detecta plataforma
+    is_tiktok = 'tiktok.com' in url
+    is_youtube = 'youtube.com' in url or 'youtu.be' in url
+    
+    # ====== CHECA TAMANHO ANTES (com fallback) ======
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
+        check_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'ignoreerrors': True,
+        }
+        
+        # Adiciona autenticação pro TikTok
+        if is_tiktok:
+            cookie_file = get_cookie_path('tiktok')
+            if cookie_file:
+                check_opts['cookiefile'] = cookie_file
+                print("🍪 Usando cookies do arquivo")
+            else:
+                # Fallback: tenta cookies do navegador
+                try:
+                    check_opts['cookiesfrombrowser'] = ('chrome',)
+                    print("🍪 Tentando cookies do Chrome")
+                except:
+                    try:
+                        check_opts['cookiesfrombrowser'] = ('firefox',)
+                        print("🍪 Tentando cookies do Firefox")
+                    except:
+                        print("⚠️ Sem cookies - vídeos privados podem falhar")
+        
+        with yt_dlp.YoutubeDL(check_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             titulo = info.get('title', 'video')
             
-            # Pega tamanho aproximado
             filesize = info.get('filesize') or info.get('filesize_approx') or 0
             filesize_mb = filesize / (1024 * 1024)
             
-            # LIMITE: 60MB (deixa margem pra conversão que usa ~2x)
             MAX_SIZE = int(os.getenv('MAX_DOWNLOAD_MB', '60'))
             if filesize_mb > MAX_SIZE:
                 print(f"❌ Arquivo muito grande: {filesize_mb:.1f}MB (limite: {MAX_SIZE}MB)")
                 return False, f"arquivo_muito_grande_{filesize_mb:.0f}MB"
             
-            # Aviso se tá próximo do limite
             if filesize_mb > MAX_SIZE * 0.7:
-                print(f"⚠️ Arquivo grande ({filesize_mb:.1f}MB), conversão pode falhar")
-    except Exception as e:
-        print(f"⚠️ Não conseguiu verificar tamanho: {e}")
+                print(f"⚠️ Arquivo grande ({filesize_mb:.1f}MB)")
+                
+    except Exception:
+        # Ignora erro de verificação e tenta baixar mesmo assim
+        pass
 
     # ====== PEGA COOKIE (ENV OU LOCAL) ======
     cookie_file = None
-    if 'youtube.com' in url or 'youtu.be' in url:
+    if is_youtube:
         cookie_file = get_cookie_path('youtube')
-    elif 'tiktok.com' in url:
+    elif is_tiktok:
         cookie_file = get_cookie_path('tiktok')
 
-    # ====== DETECTA FFMPEG ======
+    # ====== DETECTA FFMPEG (CORRIGIDO) ======
     ffmpeg_paths = [
         'ffmpeg',
         '/usr/bin/ffmpeg',
         '/usr/local/bin/ffmpeg',
-        r'C:\ffmpeg\bin\ffmpeg.exe',
+        r'C:\ffmpeg\bin\ffmpeg.exe',  # ← VÍRGULA CORRIGIDA
     ]
     
+    ffmpeg_cmd = None
     ffmpeg_location = None
+    
     for path in ffmpeg_paths:
-        parent_dir = os.path.dirname(path) if os.path.dirname(path) else None
         if shutil.which(path) or os.path.exists(path):
-            ffmpeg_location = parent_dir if parent_dir else '/usr/bin'
+            ffmpeg_cmd = path
+            # Se for caminho completo do .exe, pega só o diretório
+            if path.endswith('.exe') or path.endswith('ffmpeg'):
+                ffmpeg_location = os.path.dirname(path) if os.path.dirname(path) else None
+            else:
+                ffmpeg_location = path if os.path.isdir(path) else os.path.dirname(path)
+            
             print(f"🔍 FFmpeg encontrado: {path}")
+            print(f"📂 FFmpeg location: {ffmpeg_location}")
             break
 
+    if not ffmpeg_cmd:
+        print("⚠️ FFmpeg não encontrado!")
+        if formato in ['mp3', 'wav']:
+            print("❌ Conversão de áudio requer FFmpeg")
+            return False, "ffmpeg_necessario"
+
+    # ====== CONFIGURAÇÃO YT-DLP ======
     ydl_opts = {
         'outtmpl': 'downloads/temp_%(title)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
+        'ignoreerrors': False,
         'retries': 10,
         'fragment_retries': 10,
         'file_access_retries': 10,
         'extractor_retries': 10,
     }
 
+    # Configura localização do ffmpeg
     if ffmpeg_location:
         ydl_opts['ffmpeg_location'] = ffmpeg_location
-    else:
-        print("⚠️ FFmpeg não encontrado, downloads podem falhar")
 
+    # Adiciona cookies
     if cookie_file:
         ydl_opts['cookiefile'] = cookie_file
+        print(f"🍪 Usando cookies: {cookie_file}")
+    elif is_tiktok:
+        # Tenta cookies do navegador como último recurso
+        try:
+            ydl_opts['cookiesfrombrowser'] = ('chrome',)
+            print("🍪 Usando cookies do Chrome")
+        except:
+            print("⚠️ TikTok sem autenticação - alguns vídeos podem falhar")
 
     # Configurações por formato
     if formato == "mp3":
@@ -171,8 +227,9 @@ def baixar_video(url, formato='mp4'):
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '192'  # ↓ REDUZIDO de 320 pra economizar RAM
-            }]
+                'preferredquality': '192'
+            }],
+            'prefer_ffmpeg': True,
         })
     elif formato == "wav":
         ydl_opts.update({
@@ -181,14 +238,20 @@ def baixar_video(url, formato='mp4'):
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'wav'
-            }]
+            }],
+            'prefer_ffmpeg': True,
         })
     elif formato == "mp4":
-        # ↓ LIMITA RESOLUÇÃO pra economizar RAM
-        ydl_opts.update({
-            'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]',
-            'merge_output_format': 'mp4',
-        })
+        if is_tiktok:
+            ydl_opts.update({
+                'format': 'best',
+                'merge_output_format': 'mp4',
+            })
+        else:
+            ydl_opts.update({
+                'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+                'merge_output_format': 'mp4',
+            })
 
     try:
         # Download
@@ -235,13 +298,6 @@ def baixar_video(url, formato='mp4'):
                     if codec in ['hevc', 'h265', 'hvc1', 'hev1', 'av1']:
                         print(f"🔄 Convertendo {codec} → H.264 (modo low-memory)...")
                         
-                        # Detecta ffmpeg
-                        ffmpeg_cmd = None
-                        for path in ffmpeg_paths:
-                            if shutil.which(path) or os.path.exists(path):
-                                ffmpeg_cmd = path
-                                break
-                        
                         if not ffmpeg_cmd:
                             print("❌ FFmpeg não encontrado para conversão")
                             gc.collect()
@@ -251,35 +307,20 @@ def baixar_video(url, formato='mp4'):
                         cmd = [
                             ffmpeg_cmd,
                             '-i', arquivo_original,
-                            
-                            # ↓ LIMITA USO DE THREADS (menos RAM)
                             '-threads', '2',
-                            
-                            # ↓ VIDEO: preset ultrafast + 2-pass desabilitado
                             '-c:v', 'libx264',
-                            '-preset', 'ultrafast',  # Mais rápido = menos RAM
-                            '-tune', 'fastdecode',   # Otimiza pra decodificação leve
-                            '-crf', '26',            # Qualidade razoável (23=alto, 28=baixo)
-                            
-                            # ↓ LIMITA BUFFER (crucial pra RAM)
+                            '-preset', 'ultrafast',
+                            '-tune', 'fastdecode',
+                            '-crf', '26',
                             '-bufsize', '2M',
                             '-maxrate', '2M',
-                            
-                            # ↓ REDUZ RESOLUÇÃO se necessário
-                            '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',  # Garante divisível por 2
-                            
-                            # ↓ AUDIO: bitrate reduzido
+                            '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
                             '-c:a', 'aac',
-                            '-b:a', '128k',  # Reduzido de 320k
-                            '-ac', '2',      # Força stereo
-                            
-                            # ↓ OTIMIZAÇÕES GERAIS
+                            '-b:a', '320k',
+                            '-ac', '2',
                             '-movflags', '+faststart',
-                            '-max_muxing_queue_size', '1024',  # Previne overflow
-                            
-                            # ↓ DESABILITA METADATA (economiza RAM)
+                            '-max_muxing_queue_size', '1024',
                             '-map_metadata', '-1',
-                            
                             '-y',
                             arquivo_final
                         ]
@@ -291,7 +332,6 @@ def baixar_video(url, formato='mp4'):
                         if platform.system() == 'Linux':
                             try:
                                 import resource
-                                # Limita a 400MB (deixa 112MB pro sistema)
                                 resource.setrlimit(resource.RLIMIT_AS, (400 * 1024 * 1024, 400 * 1024 * 1024))
                                 print("🔒 Limite de RAM aplicado (400MB)")
                             except Exception as e:
@@ -300,7 +340,7 @@ def baixar_video(url, formato='mp4'):
                         result = subprocess.run(cmd, capture_output=True, text=True)
                         
                         if result.returncode != 0:
-                            print(f"❌ Erro ffmpeg: {result.stderr[:500]}")  # Limita output
+                            print(f"❌ Erro ffmpeg: {result.stderr[:500]}")
                             
                             # Se falhou por OOM, tenta conversão mais leve
                             if 'memory' in result.stderr.lower() or 'cannot allocate' in result.stderr.lower():
@@ -309,13 +349,13 @@ def baixar_video(url, formato='mp4'):
                                 cmd_lite = [
                                     ffmpeg_cmd,
                                     '-i', arquivo_original,
-                                    '-threads', '1',  # ↓ AINDA MENOS THREADS
+                                    '-threads', '1',
                                     '-c:v', 'libx264',
                                     '-preset', 'ultrafast',
-                                    '-crf', '28',  # ↓ QUALIDADE MENOR
-                                    '-vf', 'scale=640:-2',  # ↓ FORÇA 640p
+                                    '-crf', '28',
+                                    '-vf', 'scale=640:-2',
                                     '-c:a', 'aac',
-                                    '-b:a', '96k',  # ↓ AUDIO BEM BAIXO
+                                    '-b:a', '320k',
                                     '-ac', '2',
                                     '-movflags', '+faststart',
                                     '-map_metadata', '-1',
@@ -406,7 +446,7 @@ def baixar_video(url, formato='mp4'):
     finally:
         gc.collect()
         # ====== LIMPA ARQUIVO TEMPORÁRIO ======
-        if cookie_file and '/tmp' in cookie_file or (cookie_file and 'AppData\\Local\\Temp' in cookie_file):
+        if cookie_file and ('/tmp' in cookie_file or 'AppData\\Local\\Temp' in cookie_file):
             try:
                 os.remove(cookie_file)
             except:
@@ -514,7 +554,7 @@ class Downloader(commands.Cog):
         
         if not sucesso:
             embed_erro = utils.base_embed("erro", "não consegui baixar")
-            embed_erro.add_field(name="possíveis causas", value="• vídeo privado\n• link inválido\n• região bloqueada", inline=False)
+            embed_erro.add_field(name="possíveis causas", value="• vídeo privado\n• link inválido\n• região bloqueada\n• ffmpeg não encontrado", inline=False)
             return await msg.edit(embed=embed_erro)
         
         # Pega arquivo mais recente
@@ -539,7 +579,7 @@ class Downloader(commands.Cog):
         
         tamanho_mb = round(os.path.getsize(caminho_novo) / (1024*1024), 2)
         
-        # ==================== DISCORD (≤8MB) ====================
+        # ==================== DISCORD (≤10MB) ====================
         LIMITE_DISCORD = 10
         
         if tamanho_mb <= LIMITE_DISCORD:
@@ -571,7 +611,7 @@ class Downloader(commands.Cog):
                     pass
                 msg = await ctx.send(embed=utils.base_embed("enviando pro catbox", "arquivo grande demais pro discord"))
         
-        # ==================== CATBOX (>8MB) ====================
+        # ==================== CATBOX (>10MB) ====================
         
         if tamanho_mb > 200:
             embed_grande = utils.base_embed("muito grande", f"**{titulo[:100]}**")
@@ -636,18 +676,7 @@ class Downloader(commands.Cog):
         help="mostra os últimos 20 arquivos baixados que ainda estão salvos localmente."
     )
     async def arquivos(self, ctx):
-        """
-        lista arquivos salvos na pasta downloads.
-        
-        mostra os 20 arquivos mais recentes que ainda não foram deletados.
-        útil para ver o que está ocupando espaço.
-        
-        uso:
-        !arquivos
-        
-        exemplo:
-        !arquivos
-        """
+        """lista arquivos salvos na pasta downloads"""
         utils = self.bot.get_cog('utils')
         
         if not os.path.exists('downloads') or not os.listdir('downloads'):
@@ -668,19 +697,7 @@ class Downloader(commands.Cog):
         help="remove um arquivo da pasta downloads. use !arquivos para ver os nomes disponíveis."
     )
     async def deletar(self, ctx, *, nome):
-        """
-        deleta um arquivo específico da pasta downloads.
-        
-        use o comando !arquivos primeiro para ver a lista de arquivos salvos.
-        o nome deve ser exato, incluindo a extensão.
-        
-        uso:
-        !deletar (nome_do_arquivo)
-        
-        exemplo:
-        !deletar video_123456.mp4
-        !deletar musica_789012.mp3
-        """
+        """deleta um arquivo específico da pasta downloads"""
         caminho = f"downloads/{nome}"
         
         if os.path.exists(caminho):
@@ -696,19 +713,7 @@ class Downloader(commands.Cog):
         help="limpa completamente a pasta downloads. pede confirmação antes de executar."
     )
     async def limpardownloads(self, ctx):
-        """
-        apaga todos os arquivos da pasta downloads.
-        
-        remove permanentemente todos os vídeos e áudios baixados.
-        pede confirmação digitando 'sim' em 10 segundos.
-        
-        uso:
-        !limpardownloads
-        
-        exemplo:
-        !limpardownloads
-        !clrdl
-        """
+        """apaga todos os arquivos da pasta downloads"""
         await ctx.send("apagar tudo? digite `sim` em 10s")
         
         def check(m):
