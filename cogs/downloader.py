@@ -1,4 +1,4 @@
-import yt_dlp, os, asyncio, discord, requests, re, shutil, time, subprocess, tempfile, ffmpeg, ffprobe
+import yt_dlp, os, asyncio, discord, requests, re, shutil, time, subprocess, tempfile
 from discord.ext import commands
 
 def get_cookie_path(platform):
@@ -561,4 +561,3 @@ class Downloader(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Downloader(bot))
-    print("✅ Downloader carregado!")

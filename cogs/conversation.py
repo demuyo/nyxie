@@ -1133,5 +1133,4 @@ class ConversationSystem(commands.Cog):
 
 async def setup(bot):
     cog = ConversationSystem(bot)
-    print("✅ Groq + Sistema Yandere Dinâmico pronto! 🔪⚡")
     await bot.add_cog(cog)

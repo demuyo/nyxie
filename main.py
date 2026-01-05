@@ -100,8 +100,11 @@ async def load_cogs():
     for cog in cogs:
         try:
             await bot.load_extension(cog)
+            print(f"✅ {cog}")
         except Exception as e:
-            print(f"❌ Erro ao carregar {cog}: {e}")
+            print(f"❌ {cog}: {e}")
+            import traceback
+            traceback.print_exc()
 
 @bot.event
 async def on_ready():

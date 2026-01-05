@@ -347,4 +347,3 @@ class AIActions(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(AIActions(bot))
-    print("✅ AI Actions carregado!")
