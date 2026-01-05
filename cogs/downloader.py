@@ -1,4 +1,4 @@
-import yt_dlp, os, asyncio, discord, requests, re, shutil, time, subprocess, tempfile
+import yt_dlp, os, asyncio, discord, requests, re, shutil, time, subprocess, tempfile, ffmpeg, ffprobe
 from discord.ext import commands
 
 def get_cookie_path(platform):
