@@ -202,7 +202,7 @@ def baixar_video(url, formato='mp4'):
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '192'
+                'preferredquality': '320'
             }],
             'prefer_ffmpeg': True,
         })
@@ -374,7 +374,7 @@ class Downloader(commands.Cog):
         # ==================== LOADING ====================
         embed_loading = utils.base_embed("baixando", None)
         embed_loading.add_field(name="formato", value=f"`{formato.upper()}`", inline=True)
-        embed_loading.add_field(name="cookies", value="✅ ativados", inline=True)
+        embed_loading.add_field(name="status", value="processando", inline=True)
         msg = await ctx.send(embed=embed_loading)
         
         # ==================== DOWNLOAD ====================
