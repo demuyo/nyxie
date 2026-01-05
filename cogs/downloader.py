@@ -96,8 +96,31 @@ def verificar_codec(caminho):
         return 'h264'
 
 def baixar_video(url, formato='mp4'):
-    """Baixa vídeo/áudio com retry e conversão automática"""
+    """Baixa vídeo/áudio com retry e conversão automática (otimizado para 512MB RAM)"""
+    import gc
     os.makedirs('downloads', exist_ok=True)
+
+    # ====== CHECA TAMANHO ANTES ======
+    try:
+        with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
+            info = ydl.extract_info(url, download=False)
+            titulo = info.get('title', 'video')
+            
+            # Pega tamanho aproximado
+            filesize = info.get('filesize') or info.get('filesize_approx') or 0
+            filesize_mb = filesize / (1024 * 1024)
+            
+            # LIMITE: 60MB (deixa margem pra conversão que usa ~2x)
+            MAX_SIZE = int(os.getenv('MAX_DOWNLOAD_MB', '60'))
+            if filesize_mb > MAX_SIZE:
+                print(f"❌ Arquivo muito grande: {filesize_mb:.1f}MB (limite: {MAX_SIZE}MB)")
+                return False, f"arquivo_muito_grande_{filesize_mb:.0f}MB"
+            
+            # Aviso se tá próximo do limite
+            if filesize_mb > MAX_SIZE * 0.7:
+                print(f"⚠️ Arquivo grande ({filesize_mb:.1f}MB), conversão pode falhar")
+    except Exception as e:
+        print(f"⚠️ Não conseguiu verificar tamanho: {e}")
 
     # ====== PEGA COOKIE (ENV OU LOCAL) ======
     cookie_file = None
@@ -108,10 +131,10 @@ def baixar_video(url, formato='mp4'):
 
     # ====== DETECTA FFMPEG ======
     ffmpeg_paths = [
-        'ffmpeg',  # Linux/Render (via PATH)
-        '/usr/bin/ffmpeg',  # Linux padrão
-        '/usr/local/bin/ffmpeg',  # Homebrew Mac
-        r'C:\ffmpeg\bin\ffmpeg.exe',  # Windows local
+        'ffmpeg',
+        '/usr/bin/ffmpeg',
+        '/usr/local/bin/ffmpeg',
+        r'C:\ffmpeg\bin\ffmpeg.exe',
     ]
     
     ffmpeg_location = None
@@ -148,7 +171,7 @@ def baixar_video(url, formato='mp4'):
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '320'
+                'preferredquality': '192'  # ↓ REDUZIDO de 320 pra economizar RAM
             }]
         })
     elif formato == "wav":
@@ -161,8 +184,9 @@ def baixar_video(url, formato='mp4'):
             }]
         })
     elif formato == "mp4":
+        # ↓ LIMITA RESOLUÇÃO pra economizar RAM
         ydl_opts.update({
-            'format': 'bestvideo[vcodec^=avc1]+bestaudio/bestvideo+bestaudio/best',
+            'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]',
             'merge_output_format': 'mp4',
         })
 
@@ -172,7 +196,8 @@ def baixar_video(url, formato='mp4'):
             info = ydl.extract_info(url, download=True)
             titulo = info.get('title', 'video')
 
-        # Aguarda Windows liberar arquivo
+        # Limpa memória após download
+        gc.collect()
         time.sleep(2)
 
         # Processamento de vídeo MP4
@@ -186,6 +211,7 @@ def baixar_video(url, formato='mp4'):
                             print(f"⏳ Aguardando arquivo... {tentativa+1}/5")
                             time.sleep(2)
                             continue
+                        gc.collect()
                         return False, None
                     
                     arquivo_original = f'downloads/{arquivos_temp[0]}'
@@ -195,16 +221,21 @@ def baixar_video(url, formato='mp4'):
                             print(f"⏳ Aguardando existência... {tentativa+1}/5")
                             time.sleep(2)
                             continue
+                        gc.collect()
                         return False, None
+                    
+                    # Checa tamanho do arquivo baixado
+                    tamanho_download = os.path.getsize(arquivo_original) / (1024*1024)
+                    print(f"📦 Arquivo baixado: {tamanho_download:.1f}MB")
                     
                     arquivo_final = arquivo_original.replace('temp_', '').rsplit('.', 1)[0] + '.mp4'
                     codec = verificar_codec(arquivo_original)
                     
                     # Converte codecs problemáticos
                     if codec in ['hevc', 'h265', 'hvc1', 'hev1', 'av1']:
-                        print(f"🔄 Convertendo {codec} → H.264...")
+                        print(f"🔄 Convertendo {codec} → H.264 (modo low-memory)...")
                         
-                        # Detecta ffmpeg para conversão
+                        # Detecta ffmpeg
                         ffmpeg_cmd = None
                         for path in ffmpeg_paths:
                             if shutil.which(path) or os.path.exists(path):
@@ -213,44 +244,121 @@ def baixar_video(url, formato='mp4'):
                         
                         if not ffmpeg_cmd:
                             print("❌ FFmpeg não encontrado para conversão")
+                            gc.collect()
                             return False, None
                         
+                        # ====== CONFIGURAÇÃO OTIMIZADA PRA 512MB RAM ======
                         cmd = [
                             ffmpeg_cmd,
                             '-i', arquivo_original,
+                            
+                            # ↓ LIMITA USO DE THREADS (menos RAM)
+                            '-threads', '2',
+                            
+                            # ↓ VIDEO: preset ultrafast + 2-pass desabilitado
                             '-c:v', 'libx264',
-                            '-preset', 'fast',
-                            '-crf', '23',
+                            '-preset', 'ultrafast',  # Mais rápido = menos RAM
+                            '-tune', 'fastdecode',   # Otimiza pra decodificação leve
+                            '-crf', '26',            # Qualidade razoável (23=alto, 28=baixo)
+                            
+                            # ↓ LIMITA BUFFER (crucial pra RAM)
+                            '-bufsize', '2M',
+                            '-maxrate', '2M',
+                            
+                            # ↓ REDUZ RESOLUÇÃO se necessário
+                            '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',  # Garante divisível por 2
+                            
+                            # ↓ AUDIO: bitrate reduzido
                             '-c:a', 'aac',
-                            '-b:a', '320k',
+                            '-b:a', '128k',  # Reduzido de 320k
+                            '-ac', '2',      # Força stereo
+                            
+                            # ↓ OTIMIZAÇÕES GERAIS
                             '-movflags', '+faststart',
+                            '-max_muxing_queue_size', '1024',  # Previne overflow
+                            
+                            # ↓ DESABILITA METADATA (economiza RAM)
+                            '-map_metadata', '-1',
+                            
                             '-y',
                             arquivo_final
                         ]
                         
+                        print(f"🎬 Iniciando conversão com limites de RAM...")
+                        
+                        # ↓ LIMITA MEMÓRIA DO PROCESSO (Linux only)
+                        import platform
+                        if platform.system() == 'Linux':
+                            try:
+                                import resource
+                                # Limita a 400MB (deixa 112MB pro sistema)
+                                resource.setrlimit(resource.RLIMIT_AS, (400 * 1024 * 1024, 400 * 1024 * 1024))
+                                print("🔒 Limite de RAM aplicado (400MB)")
+                            except Exception as e:
+                                print(f"⚠️ Não conseguiu limitar RAM: {e}")
+                        
                         result = subprocess.run(cmd, capture_output=True, text=True)
                         
                         if result.returncode != 0:
-                            print(f"❌ Erro ffmpeg: {result.stderr}")
-                            if tentativa < 4:
-                                time.sleep(2)
-                                continue
-                            return False, None
+                            print(f"❌ Erro ffmpeg: {result.stderr[:500]}")  # Limita output
+                            
+                            # Se falhou por OOM, tenta conversão mais leve
+                            if 'memory' in result.stderr.lower() or 'cannot allocate' in result.stderr.lower():
+                                print("🔄 Tentando conversão ultra-leve...")
+                                
+                                cmd_lite = [
+                                    ffmpeg_cmd,
+                                    '-i', arquivo_original,
+                                    '-threads', '1',  # ↓ AINDA MENOS THREADS
+                                    '-c:v', 'libx264',
+                                    '-preset', 'ultrafast',
+                                    '-crf', '28',  # ↓ QUALIDADE MENOR
+                                    '-vf', 'scale=640:-2',  # ↓ FORÇA 640p
+                                    '-c:a', 'aac',
+                                    '-b:a', '96k',  # ↓ AUDIO BEM BAIXO
+                                    '-ac', '2',
+                                    '-movflags', '+faststart',
+                                    '-map_metadata', '-1',
+                                    '-y',
+                                    arquivo_final
+                                ]
+                                
+                                result = subprocess.run(cmd_lite, capture_output=True, text=True)
+                                if result.returncode != 0:
+                                    print(f"❌ Conversão lite também falhou")
+                                    if tentativa < 4:
+                                        gc.collect()
+                                        time.sleep(2)
+                                        continue
+                                    gc.collect()
+                                    return False, None
+                            else:
+                                if tentativa < 4:
+                                    gc.collect()
+                                    time.sleep(2)
+                                    continue
+                                gc.collect()
+                                return False, None
                         
                         time.sleep(1)
                         
-                        # Tenta deletar original
+                        # Deleta original IMEDIATAMENTE
                         for _ in range(3):
                             try:
                                 os.remove(arquivo_original)
+                                print("🗑️ Arquivo original deletado")
                                 break
                             except PermissionError:
                                 time.sleep(1)
                         
+                        # Força limpeza de RAM
+                        gc.collect()
+                        
                         tamanho_mb = os.path.getsize(arquivo_final) / (1024*1024)
                         print(f"✅ Convertido! {codec} → H.264 ({tamanho_mb:.1f}MB)")
+                    
                     else:
-                        print(f"✅ Codec OK ({codec})")
+                        print(f"✅ Codec OK ({codec}), sem conversão necessária")
                         
                         # Tenta renomear com retry
                         renomeado = False
@@ -273,25 +381,30 @@ def baixar_video(url, formato='mp4'):
                             except:
                                 pass
                     
+                    gc.collect()
                     return True, titulo
                     
                 except Exception as e:
+                    gc.collect()
                     if tentativa < 4:
                         print(f"⚠️ Erro tentativa {tentativa+1}/5: {e}")
                         time.sleep(2)
                     else:
-                        print(f"❌ Falhou após 5 tentativas")
+                        print(f"❌ Falhou após 5 tentativas: {e}")
                         return False, None
             
+            gc.collect()
             return False, None
 
         return True, titulo
 
     except Exception as e:
+        gc.collect()
         print(f"❌ Erro yt-dlp: {e}")
         return False, None
     
     finally:
+        gc.collect()
         # ====== LIMPA ARQUIVO TEMPORÁRIO ======
         if cookie_file and '/tmp' in cookie_file or (cookie_file and 'AppData\\Local\\Temp' in cookie_file):
             try:
