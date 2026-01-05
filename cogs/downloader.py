@@ -117,7 +117,8 @@ def baixar_video(url, formato='mp4'):
             'ignoreerrors': True,
         }
         
-        # Adiciona autenticação pro TikTok
+        # Adiciona autenticação pro TikTok/ yt
+        
         if is_tiktok:
             cookie_file = get_cookie_path('tiktok')
             if cookie_file:
@@ -156,7 +157,7 @@ def baixar_video(url, formato='mp4'):
 
     # ====== PEGA COOKIE (ENV OU LOCAL) ======
     cookie_file = None
-    if is_youtube:
+    if 'youtube.com' in url or 'youtu.be' in url:
         cookie_file = get_cookie_path('youtube')
     elif is_tiktok:
         cookie_file = get_cookie_path('tiktok')
