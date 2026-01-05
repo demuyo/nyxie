@@ -24,27 +24,51 @@ bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None
 
 # ====== COMANDOS QUE SÓ FUNCIONAM EM SERVIDOR ======
 COMANDOS_SERVIDOR_ONLY = [
-    # Moderação
-    'kick', 'ban', 'unban', 'banlist', 'timeout', 'removetimeout',
-    'warn', 'warns', 'clearwarns', 'nick',
+    # ==================== MODERAÇÃO ====================
+    'kick',           # expulsa membro
+    'ban',            # bane membro
+    'unban',          # desbane por ID
+    'banlist',        # lista banidos
+    'timeout',        # dá timeout
+    'removetimeout',  # remove timeout
+    'warn',           # adiciona aviso
+    'warns',          # mostra avisos
+    'clearwarns',     # limpa avisos
+    'nick',           # altera apelido
     
-    # Cargos
-    'giverole', 'takerole', 'roles', 'createrole', 'deleterole',
+    # ==================== CARGOS ====================
+    'giverole',       # adiciona cargo
+    'takerole',       # remove cargo
+    'roles',          # lista cargos
+    'createrole',     # cria cargo
+    'deleterole',     # deleta cargo
     
-    # Canais
-    'createchannel', 'deletechannel', 'createcategory', 'lock', 'unlock', 'slowmode',
+    # ==================== CANAIS ====================
+    'createchannel',  # cria canal
+    'deletechannel',  # deleta canal
+    'createcategory', # cria categoria
+    'lock',           # bloqueia canal
+    'unlock',         # desbloqueia canal
+    'slowmode',       # define slowmode
     
-    # Mensagens
-    'clear', 'announce',
+    # ==================== MENSAGENS ====================
+    'clear',          # limpa mensagens
+    'announce',       # envia anúncio
     
-    # Info servidor
-    'serverinfo', 'membercount',
+    # ==================== INFORMAÇÕES ====================
+    'serverinfo',     # info do servidor
+    'membercount',    # contagem de membros
     
-    # Chat em canal
-    'forcestop', 'chats', 'modhelp',
+    # ==================== CHAT EM CANAL ====================
+    'forcestop',      # para chat AI
+    'chats',          # lista chats ativos
+    'chat',           # ajuda moderação
+    'stopchat',       # encerra o chat automático
+    'talk',           # envia uma mensagem avulsa para nyxie
 
-    # Outros
-    'userinfo'
+    # ==================== OUTROS ====================
+    'userinfo',       # info do usuário (pode ser usado em server/DM mas vamos manter aqui)
+
 ]
 
 # ====== KEEP-ALIVE (WAITRESS) ======
