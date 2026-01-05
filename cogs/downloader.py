@@ -60,21 +60,40 @@ def nome_seguro(texto, mensagem_id):
 def verificar_codec(caminho):
     """Retorna o codec do vídeo"""
     try:
+        # Busca ffprobe em múltiplos lugares
+        ffprobe_paths = [
+            'ffprobe',  # Linux/Render (via PATH)
+            '/usr/bin/ffprobe',  # Linux padrão
+            '/usr/local/bin/ffprobe',  # Homebrew Mac
+            r'C:\ffmpeg\bin\ffprobe.exe',  # Windows local
+        ]
+        
+        ffprobe_cmd = None
+        for path in ffprobe_paths:
+            if shutil.which(path) or os.path.exists(path):
+                ffprobe_cmd = path
+                print(f"🔍 FFprobe encontrado: {path}")
+                break
+        
+        if not ffprobe_cmd:
+            print("⚠️ FFprobe não encontrado, assumindo codec compatível")
+            return 'h264'
+        
         cmd = [
-            r'C:\ffmpeg\bin\ffprobe.exe',
+            ffprobe_cmd,
             '-v', 'error',
             '-select_streams', 'v:0',
             '-show_entries', 'stream=codec_name',
             '-of', 'default=noprint_wrappers=1:nokey=1',
             caminho
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         codec = result.stdout.strip().lower()
         print(f"🎬 Codec: {codec}")
         return codec
     except Exception as e:
         print(f"❌ Erro ao verificar codec: {e}")
-        return None
+        return 'h264'
 
 def baixar_video(url, formato='mp4'):
     """Baixa vídeo/áudio com retry e conversão automática"""
@@ -87,16 +106,36 @@ def baixar_video(url, formato='mp4'):
     elif 'tiktok.com' in url:
         cookie_file = get_cookie_path('tiktok')
 
+    # ====== DETECTA FFMPEG ======
+    ffmpeg_paths = [
+        'ffmpeg',  # Linux/Render (via PATH)
+        '/usr/bin/ffmpeg',  # Linux padrão
+        '/usr/local/bin/ffmpeg',  # Homebrew Mac
+        r'C:\ffmpeg\bin\ffmpeg.exe',  # Windows local
+    ]
+    
+    ffmpeg_location = None
+    for path in ffmpeg_paths:
+        parent_dir = os.path.dirname(path) if os.path.dirname(path) else None
+        if shutil.which(path) or os.path.exists(path):
+            ffmpeg_location = parent_dir if parent_dir else '/usr/bin'
+            print(f"🔍 FFmpeg encontrado: {path}")
+            break
+
     ydl_opts = {
         'outtmpl': 'downloads/temp_%(title)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
-        'ffmpeg_location': r'C:\ffmpeg\bin',
         'retries': 10,
         'fragment_retries': 10,
         'file_access_retries': 10,
         'extractor_retries': 10,
     }
+
+    if ffmpeg_location:
+        ydl_opts['ffmpeg_location'] = ffmpeg_location
+    else:
+        print("⚠️ FFmpeg não encontrado, downloads podem falhar")
 
     if cookie_file:
         ydl_opts['cookiefile'] = cookie_file
@@ -165,8 +204,19 @@ def baixar_video(url, formato='mp4'):
                     if codec in ['hevc', 'h265', 'hvc1', 'hev1', 'av1']:
                         print(f"🔄 Convertendo {codec} → H.264...")
                         
+                        # Detecta ffmpeg para conversão
+                        ffmpeg_cmd = None
+                        for path in ffmpeg_paths:
+                            if shutil.which(path) or os.path.exists(path):
+                                ffmpeg_cmd = path
+                                break
+                        
+                        if not ffmpeg_cmd:
+                            print("❌ FFmpeg não encontrado para conversão")
+                            return False, None
+                        
                         cmd = [
-                            r'C:\ffmpeg\bin\ffmpeg.exe',
+                            ffmpeg_cmd,
                             '-i', arquivo_original,
                             '-c:v', 'libx264',
                             '-preset', 'fast',
