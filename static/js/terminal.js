@@ -3,22 +3,44 @@
 const output = document.getElementById('output');
 const input = document.getElementById('input');
 
-// ==================== ASCII ART INICIALIZAÇÃO ====================
-window.onload = () => {
-    const asciiArt = `
-███╗   ██╗██╗   ██╗██╗  ██╗██╗███████╗
-████╗  ██║╚██╗ ██╔╝╚██╗██╔╝██║██╔════╝
-██╔██╗ ██║ ╚████╔╝  ╚███╔╝ ██║█████╗  
-██║╚██╗██║  ╚██╔╝   ██╔██╗ ██║██╔══╝  
-██║ ╚████║   ██║   ██╔╝ ██╗██║███████╗
-╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚══════╝
+// ==================== CARREGA QUOTES E ASCII ALEATÓRIOS ====================
+window.onload = async () => {
+    try {
+        // Busca quote e ASCII aleatórios do servidor (já vem filtrado pelo backend)
+        const response = await fetch('/quotes');
+        const data = await response.json();
+        
+        console.log('📦 Dados carregados:', data);
+        console.log('📱 Mobile:', data.is_mobile);
+        console.log('🎨 ASCII:', data.ascii_name);
+        
+        // ⬇️ REMOVIDO: Não sobrescreve mais, usa direto o que veio do servidor
+        // Monta o banner com o ASCII que veio do backend
+        const banner = `${data.ascii_art}
 
 NYXIE TERMINAL v1.0
-> PRESENT DAY... PRESENT TIME...
-> digite 'help' para comandos secretos
-    `;
-    
-    addLine(asciiArt, 'bot-response');
+> ${data.quote}
+${data.is_mobile ? "> digite 'help'" : "> digite 'help' para comandos secretos"}
+        `;
+        
+        const line = document.createElement('div');
+        line.className = 'output-line bot-response ascii-art';
+        line.textContent = banner;
+        output.appendChild(line);
+        output.scrollTop = output.scrollHeight;
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar quotes:', error);
+        
+        // Fallback se der erro
+        addLine('━━━━━━━━━━━━━━━━━━━━', 'bot-response');
+        addLine('   NYXIE TERMINAL   ', 'bot-response');
+        addLine('━━━━━━━━━━━━━━━━━━━━', 'bot-response');
+        addLine('', 'bot-response');
+        addLine('⛧ close the world, open the nExt', 'bot-response');
+        addLine('', 'bot-response');
+        addLine("digite 'help'", 'bot-response');
+    }
 };
 
 // ==================== COMANDOS SECRETOS ====================
@@ -30,13 +52,13 @@ const secretCommands = {
     'glitch': () => {
         const crt = document.getElementById('crt');
         crt.classList.add('glitch');
-        addLine('error');
-        addLine('error');
+        addLine('█▀▀ █░░ █ ▀█▀ █▀▀ █░█', 'error');
+        addLine('█▄█ █▄▄ █ ░█░ █▄▄ █▀█', 'error');
         
         setTimeout(() => {
             crt.classList.remove('glitch');
             addLine('...estabilizado', 'bot-response');
-        }, 500);  // ⬅️ 0.5 segundos - PISCOU PERDEU
+        }, 500);
     },
     'matrix': () => {
         addLine('WAKE UP, NEO...', 'bot-response');
@@ -45,14 +67,50 @@ const secretCommands = {
     'lain': () => {
         addLine('PRESENT DAY... PRESENT TIME... HAHAHAHAHA', 'bot-response');
     },
+    'reload': async () => {
+        addLine('recarregando...', 'bot-response');
+        try {
+            const response = await fetch('/quotes');
+            const data = await response.json();
+            addLine('', 'bot-response');
+            
+            // Mostra nova ASCII e quote
+            const line = document.createElement('div');
+            line.className = 'output-line bot-response ascii-art';
+            line.textContent = `${data.ascii_art}\n\n> ${data.quote}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        } catch (error) {
+            addLine('erro ao carregar nova quote', 'error');
+        }
+    },
+    'void': () => {
+        addLine('//void//void//void', 'bot-response');
+        addLine('∅ null.null.null', 'bot-response');
+    },
+    'debug': async () => {
+        // ⬇️ NOVO: comando pra debug
+        try {
+            const response = await fetch('/quotes');
+            const data = await response.json();
+            addLine(`is_mobile: ${data.is_mobile}`, 'bot-response');
+            addLine(`ascii_name: ${data.ascii_name}`, 'bot-response');
+            addLine(`quote: ${data.quote}`, 'bot-response');
+        } catch (error) {
+            addLine('erro no debug', 'error');
+        }
+    },
     'help': () => {
         const helpText = `
-            comandos secretos:
-            • clear - limpa o terminal
-            • glitch - efeito glitch
-            • matrix - ???
-            • lain - reference
-            • help - esta mensagem
+comandos secretos:
+• clear - limpa o terminal
+• glitch - efeito glitch (0.5s)
+• matrix - ???
+• lain - reference
+• reload - nova quote + ascii
+• void - ...
+• debug - mostra info
+• help - esta mensagem
         `;
         addLine(helpText, 'bot-response');
     }
@@ -67,7 +125,7 @@ input.addEventListener('keydown', async (e) => {
         // Checa comandos secretos PRIMEIRO
         if (secretCommands[message.toLowerCase()]) {
             addLine(`> ${message}`, 'user-input');
-            secretCommands[message.toLowerCase()]();
+            await secretCommands[message.toLowerCase()]();
             input.value = '';
             return;
         }
@@ -99,7 +157,6 @@ input.addEventListener('keydown', async (e) => {
             // Remove "pensando..."
             document.getElementById('thinking')?.remove();
             
-            // Checa se a resposta é OK
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Erro HTTP:', response.status, errorText);
@@ -107,7 +164,6 @@ input.addEventListener('keydown', async (e) => {
                 return;
             }
             
-            // Tenta parsear JSON
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 const text = await response.text();
@@ -127,9 +183,7 @@ input.addEventListener('keydown', async (e) => {
             typeWriter(data.response);
             
         } catch (error) {
-            // Remove "pensando..." se ainda existir
             document.getElementById('thinking')?.remove();
-            
             console.error('Erro completo:', error);
             addLine('CONNECTION_ERROR: ' + error.message, 'error');
         }
@@ -138,7 +192,6 @@ input.addEventListener('keydown', async (e) => {
 
 // ==================== FUNÇÕES AUXILIARES ====================
 
-// Gera/recupera ID único do usuário (persiste no localStorage)
 function getUserId() {
     let userId = localStorage.getItem('nyxie_user_id');
     if (!userId) {

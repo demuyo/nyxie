@@ -217,6 +217,29 @@ body {
 
 /* ==================== TERMINAL ==================== */
 
+.ascii-art {
+    font-family: 'Courier New', Courier, monospace !important;
+    white-space: pre;  /* ⬅️ PRESERVA espaços e quebras de linha */
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+@media (max-width: 768px) {
+    .ascii-art {
+        font-size: 10px;
+        line-height: 1.1;
+    }
+}
+
+@media (max-width: 480px) {
+    .ascii-art {
+        font-size: 16px;
+        line-height: 1;
+    }
+}
+
 #terminal {
     position: relative;
     z-index: 3;

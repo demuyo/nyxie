@@ -1,4 +1,4 @@
-import discord, asyncio, os
+import discord, asyncio, os, json, random
 from discord.ext import commands
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify
@@ -85,6 +85,47 @@ conversation_system = None
 def home():
     """Renderiza o terminal web"""
     return render_template('index.html')
+
+@app.route('/quotes')
+def get_quotes():
+    """Retorna quotes e ASCII art aleatórios baseado no dispositivo"""
+    try:
+        # Detecta se é mobile pelo User-Agent
+        user_agent = request.headers.get('User-Agent', '').lower()
+        is_mobile = any(device in user_agent for device in ['mobile', 'android', 'iphone', 'ipad', 'ipod'])
+        
+        # Carrega o JSON
+        with open('cogs/assets/lines.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Escolhe quote aleatória
+        quote = random.choice(data['frases'])
+        
+        # Escolhe ASCII baseado no dispositivo
+        if is_mobile:
+            # Mobile: só pode usar ascii_both
+            ascii_item = random.choice(data['ascii_both'])
+        else:
+            # Desktop: pode usar desktop_only + both (todos)
+            all_desktop_ascii = data['ascii_desktop_only'] + data['ascii_both']
+            ascii_item = random.choice(all_desktop_ascii)
+        
+        return jsonify({
+            'quote': quote,
+            'ascii_name': ascii_item['name'],
+            'ascii_art': ascii_item['art'],
+            'is_mobile': is_mobile
+        })
+    except Exception as e:
+        print(f"❌ Erro ao carregar quotes: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'quote': '⛧ close the world, open the nExt',
+            'ascii_name': 'fallback',
+            'ascii_art': '> NYXIE.TERMINAL',
+            'is_mobile': False
+        })
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -225,7 +266,7 @@ async def on_command_error(ctx, error):
     await ctx.send(embed=embed, delete_after=5)
 
 async def main():
-    keep_alive()  # ⬅️ Inicia servidor web ANTES do bot
+    keep_alive() 
     await load_cogs()
     await bot.start(TOKEN)
 
