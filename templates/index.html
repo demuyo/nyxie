@@ -7,6 +7,91 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/terminal.css') }}">
 </head>
 <body>
+    <!-- Menu discreto -->
+    <div id="menu-toggle">⚙</div>
+    
+    <div id="sidebar" class="sidebar-hidden">
+        <div class="sidebar-header">
+            <span>CONFIG</span>
+            <button id="close-menu">×</button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Temas -->
+            <div class="sidebar-section">
+                <h3>TEMA</h3>
+                <div class="theme-grid">
+                    <button class="theme-btn" data-theme="lain">lain</button>
+                    <button class="theme-btn" data-theme="matrix">matrix</button>
+                    <button class="theme-btn" data-theme="cyberpunk">cyber</button>
+                    <button class="theme-btn" data-theme="void">void</button>
+                    <button class="theme-btn" data-theme="marimo">marimo</button>
+                    <button class="theme-btn" id="custom-theme-btn" data-theme="custom">custom</button>
+                </div>
+            </div>
+            
+            <!-- CUSTOM COLORS - ESCONDIDO POR PADRÃO -->
+            <div class="sidebar-section custom-hidden" id="custom-colors-section">
+                <h3>CUSTOM</h3>
+                
+                <div class="color-picker-group">
+                    <label for="primary-color-display">primary</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="primary-preview" style="background: #b19cd9;"></div>
+                        <input type="text" class="color-hex-input" id="primary-hex" value="#B19CD9" maxlength="7">
+                        <input type="color" id="primary-color" value="#b19cd9" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="color-picker-group">
+                    <label for="secondary-color-display">secondary</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="secondary-preview" style="background: #ff6ec7;"></div>
+                        <input type="text" class="color-hex-input" id="secondary-hex" value="#FF6EC7" maxlength="7">
+                        <input type="color" id="secondary-color" value="#ff6ec7" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="color-picker-group">
+                    <label for="prompt-color-display">prompt</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="prompt-preview" style="background: #d4a5ff;"></div>
+                        <input type="text" class="color-hex-input" id="prompt-hex" value="#D4A5FF" maxlength="7">
+                        <input type="color" id="prompt-color" value="#d4a5ff" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="color-picker-group">
+                    <label for="error-color-display">error</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="error-preview" style="background: #ff4444;"></div>
+                        <input type="text" class="color-hex-input" id="error-hex" value="#FF4444" maxlength="7">
+                        <input type="color" id="error-color" value="#ff4444" style="display: none;">
+                    </div>
+                </div>
+                
+                <!--<button id="apply-custom" class="apply-btn">aplicar</button>-->
+                <button id="reset-custom" class="reset-btn">resetar</button>
+            </div>
+
+            <!-- About -->
+            <div class="sidebar-section">
+                <h3>ABOUT</h3>
+                <p class="about-text">
+                    NYXIE.TERMINAL v1.3<br>
+                    <br>
+                    desenvolvido por<br>
+                    <a href="https://twitter.com/demuyo016" target="_blank" class="link">@demuyo016</a><br>
+                    <br>
+                    powered by groq<br>
+                    inspired by lain<br>
+                    <br>
+                    <a href="https://github.com/demuyo" target="_blank" class="link">github</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
     <div id="crt">
         <div id="terminal">
             <div id="output"></div>
@@ -16,6 +101,53 @@
             </div>
         </div>
     </div>
+    
+    <!-- MODAL DO COLOR PICKER -->
+    <div id="color-picker-modal" class="picker-modal-hidden">
+        <div class="picker-modal-content">
+            <div class="picker-header">
+                <span id="picker-title">selecione a cor</span>
+                <button id="close-picker">×</button>
+            </div>
+            
+            <div class="picker-body">
+                <canvas id="color-canvas" width="280" height="200"></canvas>
+                
+                <div class="hue-slider-container">
+                    <canvas id="hue-canvas" width="280" height="20"></canvas>
+                    <div id="hue-selector" class="slider-selector"></div>
+                </div>
+                
+                <div class="color-info">
+                    <div class="color-preview-large" id="picker-preview"></div>
+                    <div class="color-inputs">
+                        <div class="input-group">
+                            <label>HEX</label>
+                            <input type="text" id="picker-hex-input" value="#B19CD9" maxlength="7">
+                        </div>
+                        <div class="rgb-inputs">
+                            <div class="input-group">
+                                <label>R</label>
+                                <input type="number" id="picker-r" min="0" max="255" value="177">
+                            </div>
+                            <div class="input-group">
+                                <label>G</label>
+                                <input type="number" id="picker-g" min="0" max="255" value="156">
+                            </div>
+                            <div class="input-group">
+                                <label>B</label>
+                                <input type="number" id="picker-b" min="0" max="255" value="217">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="picker-confirm" class="picker-confirm-btn">fechar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/color-picker.js') }}"></script>
     <script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
 </body>
 </html>
