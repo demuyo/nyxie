@@ -1,9 +1,10 @@
 import discord, asyncio, os
 from discord.ext import commands
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, render_template, request, jsonify
 from threading import Thread
 from waitress import serve
+import traceback
 
 load_dotenv()
 
@@ -67,21 +68,71 @@ COMANDOS_SERVIDOR_ONLY = [
     'talk',           # envia uma mensagem avulsa para nyxie
 
     # ==================== OUTROS ====================
-    'userinfo',       # info do usuário (pode ser usado em server/DM mas vamos manter aqui)
-
+    'userinfo',       # info do usuário
 ]
 
-# ====== KEEP-ALIVE (WAITRESS) ======
-app = Flask('')
+# ====== FLASK APP COM TERMINAL WEB ======
+app = Flask(__name__, 
+            static_folder='static',
+            template_folder='templates')
+
+app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24).hex())
+
+# Referência global para o sistema de conversa
+conversation_system = None
 
 @app.route('/')
 def home():
-    return "nyxie online :3"
+    """Renderiza o terminal web"""
+    return render_template('index.html')
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    """Endpoint para conversação web"""
+    try:
+        global conversation_system
+        
+        # Pega o sistema de conversa do bot
+        if conversation_system is None:
+            conversation_system = bot.get_cog('ConversationSystem')
+        
+        if conversation_system is None:
+            return jsonify({'error': 'Sistema de conversa não disponível'}), 503
+        
+        data = request.json
+        
+        print(f"📩 Recebido: {data}")
+        
+        user_id = data.get('user_id', 'web_user')
+        mensagem = data.get('message', '')
+        
+        if not mensagem:
+            return jsonify({'error': 'Mensagem vazia'}), 400
+        
+        # Usa asyncio para chamar a função assíncrona
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        resposta = loop.run_until_complete(
+            conversation_system.gerar_resposta(user_id, mensagem)
+        )
+        loop.close()
+        
+        print(f"✅ Resposta: {resposta}")
+        
+        return jsonify({'response': resposta})
+    
+    except Exception as e:
+        print(f"❌ ERRO: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 def run():
+    """Roda o servidor Flask com Waitress"""
+    print("🌐 Servidor web iniciado em http://0.0.0.0:8080")
     serve(app, host='0.0.0.0', port=8080, threads=4)
 
 def keep_alive():
+    """Mantém o servidor web rodando em thread separada"""
     t = Thread(target=run)
     t.daemon = True
     t.start()
@@ -114,7 +165,7 @@ async def load_cogs():
         "cogs.utils",           # defs pra usar nas cogs
         "cogs.utilities",       # !baixar, !search
         "cogs.misc",
-        "cogs.conversation",
+        "cogs.conversation",    # ⬅️ IMPORTANTE: Sistema de conversa
         "cogs.downloader",
         "cogs.aiactions",
         "cogs.owner",        
@@ -127,12 +178,19 @@ async def load_cogs():
             print(f"✅ {cog}")
         except Exception as e:
             print(f"❌ {cog}: {e}")
-            import traceback
             traceback.print_exc()
 
 @bot.event
 async def on_ready():
-    print(f"Bot online como {bot.user}")
+    global conversation_system
+    print(f"🤖 Bot online como {bot.user}")
+    
+    # Pega referência do sistema de conversa
+    conversation_system = bot.get_cog('ConversationSystem')
+    if conversation_system:
+        print("💬 Sistema de conversa carregado")
+    else:
+        print("⚠️  Sistema de conversa não encontrado")
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -165,7 +223,7 @@ async def on_command_error(ctx, error):
     await ctx.send(embed=embed, delete_after=5)
 
 async def main():
-    keep_alive()
+    keep_alive()  # ⬅️ Inicia servidor web ANTES do bot
     await load_cogs()
     await bot.start(TOKEN)
 
