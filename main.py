@@ -128,8 +128,10 @@ def chat():
 
 def run():
     """Roda o servidor Flask com Waitress"""
-    print("🌐 Servidor web iniciado em http://0.0.0.0:8080")
-    serve(app, host='0.0.0.0', port=8080, threads=4)
+    # ⬇️ MUDANÇA: Pega porta do ambiente (Render define automaticamente)
+    port = int(os.getenv('PORT', 8080))
+    print(f"🌐 Servidor web iniciado em http://0.0.0.0:{port}")
+    serve(app, host='0.0.0.0', port=port, threads=4)
 
 def keep_alive():
     """Mantém o servidor web rodando em thread separada"""
@@ -227,4 +229,5 @@ async def main():
     await load_cogs()
     await bot.start(TOKEN)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
