@@ -7,9 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/terminal.css') }}">
 </head>
 <body>
-    <!-- Menu discreto -->
-    <div id="menu-toggle">⚙</div>
-    
+    <!-- ==================== SIDEBAR DE CONFIG (DIREITA) ==================== -->
     <div id="sidebar" class="sidebar-hidden">
         <div class="sidebar-header">
             <span>CONFIG</span>
@@ -30,7 +28,7 @@
                 </div>
             </div>
             
-            <!-- CUSTOM COLORS - ESCONDIDO POR PADRÃO -->
+            <!-- Custom Colors (escondido por padrão) -->
             <div class="sidebar-section custom-hidden" id="custom-colors-section">
                 <h3>CUSTOM</h3>
                 
@@ -70,7 +68,6 @@
                     </div>
                 </div>
                 
-                <!--<button id="apply-custom" class="apply-btn">aplicar</button>-->
                 <button id="reset-custom" class="reset-btn">resetar</button>
             </div>
 
@@ -78,7 +75,7 @@
             <div class="sidebar-section">
                 <h3>ABOUT</h3>
                 <p class="about-text">
-                    NYXIE.TERMINAL v1.3<br>
+                    NYXIE.TERMINAL v1.4<br>
                     <br>
                     desenvolvido por<br>
                     <a href="https://twitter.com/demuyo016" target="_blank" class="link">@demuyo016</a><br>
@@ -91,7 +88,24 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- ==================== SIDEBAR DE CHATS (DIREITA) ==================== -->
+    <div id="chat-sidebar" class="sidebar-hidden">
+        <div class="chat-sidebar-header">
+            <h3>chats</h3>
+            <div class="chat-header-actions">
+                <button id="new-chat-btn" title="Novo Chat">+</button>
+                <button id="toggle-sidebar-btn" title="Fechar">✕</button>
+            </div>
+        </div>
+        <div id="chat-list"></div>
+    </div>
+
+    <!-- ==================== BOTÕES FLUTUANTES (DIREITA) ==================== -->
+    <div id="menu-toggle" title="Configurações">⚙</div>
+    <button id="open-sidebar-btn" title="Abrir Chats">☰</button>
+
+    <!-- ==================== TERMINAL ==================== -->
     <div id="crt">
         <div id="terminal">
             <div id="output"></div>
@@ -102,7 +116,7 @@
         </div>
     </div>
     
-    <!-- MODAL DO COLOR PICKER -->
+    <!-- ==================== MODAL DO COLOR PICKER ==================== -->
     <div id="color-picker-modal" class="picker-modal-hidden">
         <div class="picker-modal-content">
             <div class="picker-header">
@@ -142,11 +156,12 @@
                     </div>
                 </div>
                 
-                <button id="picker-confirm" class="picker-confirm-btn">fechar</button>
+                <button id="picker-confirm" class="picker-confirm-btn">confirmar</button>
             </div>
         </div>
     </div>
     
+    <!-- ==================== SCRIPTS ==================== -->
     <script src="{{ url_for('static', filename='js/color-picker.js') }}"></script>
     <script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
 </body>
