@@ -27,7 +27,6 @@ body::before {
     pointer-events: none;
     z-index: 1;
 }
-
 /* ==================== VARIÁVEIS DE TEMA ==================== */
 
 :root {
@@ -319,7 +318,6 @@ body::before {
     line-height: 1.5;
     max-width: 1200px;
     scroll-behavior: smooth;
-    min-height: 100%;
 }
 
 #output {
@@ -336,6 +334,104 @@ body::before {
     background: #000;
     padding: 10px 0;
     z-index: 4;
+}
+
+/* ==================== RESPONSIVIDADE MOBILE PERFEITA ==================== */
+
+/* ==================== RESPONSIVIDADE MOBILE PERFEITA ==================== */
+
+@media (max-width: 768px) {
+    #crt {
+        height: 100vh;
+        height: 100dvh; /* ⬅️ ADAPTA AO TECLADO */
+        padding: 10px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #terminal {
+        min-height: calc(100vh - 20px); /* ⬅️ IGUAL O ANTIGO */
+        min-height: calc(100dvh - 20px); /* ⬅️ COM DYNAMIC VIEWPORT */
+    }
+    
+    #input-line {
+        position: sticky; /* ⬅️ MANTÉM STICKY */
+        bottom: 0;
+        padding: 10px 0;
+        background: #000;
+        z-index: 4;
+    }
+    
+    .prompt {
+        font-size: 16px; /* ⬅️ AUMENTA (era 14px) */
+    }
+    
+    #input {
+        font-size: 16px !important; /* ⬅️ EVITA ZOOM */
+    }
+    
+    #sidebar,
+    #chat-sidebar {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    #menu-toggle {
+        top: 10px;
+        right: 10px;
+    }
+    
+    #open-sidebar-btn {
+        top: 60px;
+        right: 10px;
+    }
+    
+    .ascii-art {
+        font-size: 16px;
+        line-height: 1.1;
+    }
+}
+
+@media (max-width: 480px) {
+    #terminal {
+        font-size: 15px;
+    }
+    
+    .prompt {
+        font-size: 15px;
+    }
+    
+    #input {
+        font-size: 16px;
+    }
+    
+    .ascii-art {
+        font-size: 12px;
+        line-height: 1;
+    }
+    
+    .code-block-container code {
+        font-size: 13px !important;
+    }
+}
+
+@media (max-width: 896px) and (orientation: landscape) {
+    #crt {
+        padding: 5px 10px;
+    }
+    
+    #input-line {
+        padding: 10px;
+    }
+    
+    .prompt {
+        font-size: 14px;
+    }
+    
+    #input {
+        font-size: 15px;
+    }
 }
 
 .prompt {
@@ -355,6 +451,17 @@ body::before {
     outline: none;
     flex: 1;
     caret-color: var(--primary-color);
+    -webkit-text-security: none !important;
+}
+
+#input::-webkit-contacts-auto-fill-button,
+#input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+    height: 0;
+    width: 0;
+    margin: 0;
 }
 
 #input:focus::after {
@@ -406,7 +513,7 @@ body::before {
     cursor: pointer;
     font-family: 'VT323', monospace;
     font-size: 20px;
-    z-index: 1001;
+    z-index: 999; /* ⬅️ MUDOU de 1001 para 999 (MENOR que as sidebars) */
     transition: all 0.3s ease;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     display: flex;
@@ -438,6 +545,7 @@ body::before {
 #open-sidebar-btn.btn-hidden {
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.3s ease; 
 }
 
 /* ==================== CHAT SIDEBAR (DIREITA) ==================== */
@@ -1041,59 +1149,244 @@ body::before {
     box-shadow: 0 0 10px var(--primary-color);
 }
 
-/* ==================== RESPONSIVIDADE ==================== */
 
-@media (max-width: 768px) {
-    #sidebar,
-    #chat-sidebar {
-        width: 100%;
-        max-width: 300px;
+/* ==================== SYNTAX HIGHLIGHT - CÓDIGO (NYXIE STYLE) ==================== */
+
+.code-block-container {
+    margin: 15px 0;
+    border: 2px solid var(--primary-color);
+    border-radius: 0; /* ⬅️ SEM BORDAS ARREDONDADAS = TERMINAL RAIZ */
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.9) !important;
+    box-shadow: 0 0 20px var(--primary-color);
+    animation: glow-border 3s ease-in-out infinite alternate;
+}
+
+@keyframes glow-border {
+    from {
+        box-shadow: 0 0 5px var(--primary-color);
+        border-color: var(--primary-color);
     }
-    
-    #menu-toggle {
-        top: 10px;
-        right: 10px;
-    }
-    
-    #open-sidebar-btn {
-        top: 60px;
-        right: 10px;
-    }
-    
-    #terminal {
-        font-size: 16px;
-    }
-    
-    #crt {
-        padding: 10px;
-    }
-    
-    .prompt {
-        font-size: 14px;
-    }
-    
-    .ascii-art {
-        font-size: 16px;
-        line-height: 1.1;
+    to {
+        box-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color);
+        border-color: var(--secondary-color);
     }
 }
 
-@media (max-width: 480px) {
-    .ascii-art {
-        font-size: 16px;
-        line-height: 1;
-    }
-    
-    .picker-modal-content {
-        max-width: 95%;
-    }
-    
-    .color-info {
-        flex-direction: column;
-    }
-    
-    .color-preview-large {
-        width: 100%;
-        height: 50px;
-    }
+.code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.95) !important;
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.code-language {
+    color: var(--primary-color);
+    font-family: 'VT323', monospace !important;
+    font-size: 16px !important;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px var(--primary-color);
+}
+
+.code-language::before {
+    content: '⛧ ';
+    color: var(--secondary-color);
+}
+
+.code-copy-btn {
+    background: transparent !important;
+    border: 1px solid var(--secondary-color) !important;
+    color: var(--secondary-color) !important;
+    padding: 5px 12px !important;
+    cursor: pointer;
+    font-family: 'VT323', monospace !important;
+    font-size: 16px !important;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: lowercase;
+}
+
+.code-copy-btn:hover {
+    background: var(--secondary-color) !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+.code-copy-btn.copied {
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+    animation: pulse 0.5s;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.code-copy-btn.copied:hover {
+    background: var(--primary-color) !important;
+    color: #000 !important;
+}
+
+.code-block-container pre {
+    margin: 0 !important;
+    padding: 20px !important;
+    overflow-x: auto;
+    background: #000 !important; /* ⬅️ PRETO TOTAL */
+    border: none !important;
+}
+
+.code-block-container code {
+    font-family: 'VT323', monospace !important; /* ⬅️ FONTE DA NYXIE */
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+    color: var(--primary-color) !important;
+    text-shadow: 0 0 3px var(--primary-color) !important;
+    background: transparent !important;
+}
+
+/* ⬅️ SCROLLBAR CYBERPUNK */
+.code-block-container pre::-webkit-scrollbar {
+    height: 10px;
+    background: #000;
+}
+
+.code-block-container pre::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--primary-color);
+}
+
+.code-block-container pre::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    box-shadow: 0 0 10px var(--primary-color);
+}
+
+.code-block-container pre::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color);
+    box-shadow: 0 0 15px var(--secondary-color);
+}
+
+/* ==================== PRISM.JS OVERRIDE - NYXIE CYBERPUNK ==================== */
+
+/* ⬅️ REMOVE FUNDO CINZA DO PRISM */
+code[class*="language-"],
+pre[class*="language-"] {
+    background: transparent !important;
+    color: var(--primary-color) !important;
+    font-family: 'VT323', monospace !important;
+    font-size: 16px !important;
+    text-shadow: 0 0 3px var(--primary-color) !important;
+}
+
+/* ⬅️ CORES CYBERPUNK */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+    color: #6272a4 !important;
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.token.punctuation {
+    color: var(--secondary-color) !important;
+    text-shadow: 0 0 5px var(--secondary-color) !important;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+    color: #ff79c6 !important;
+    text-shadow: 0 0 5px #ff79c6 !important;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+    color: #50fa7b !important;
+    text-shadow: 0 0 5px #50fa7b !important;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+    color: var(--prompt-color) !important;
+    text-shadow: 0 0 5px var(--prompt-color) !important;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+    color: #8be9fd !important;
+    text-shadow: 0 0 5px #8be9fd !important;
+    font-weight: bold;
+}
+
+.token.function,
+.token.class-name {
+    color: var(--primary-color) !important;
+    text-shadow: 0 0 8px var(--primary-color) !important;
+    font-weight: bold;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+    color: #ffb86c !important;
+    text-shadow: 0 0 5px #ffb86c !important;
+}
+
+.token.important,
+.token.bold {
+    font-weight: bold;
+}
+
+.token.italic {
+    font-style: italic;
+}
+
+
+/* ==================== INDICADOR DE MODELO NO MENU ==================== */
+
+.model-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    margin-bottom: 15px;
+}
+
+.model-display #model-icon {
+    font-size: 20px;
+}
+
+.model-display #model-name {
+    color: var(--primary-color);
+    font-size: 16px;
+    text-shadow: 0 0 5px var(--primary-color);
+    text-transform: lowercase;
+    flex: 1;
+}
+
+.model-hint {
+    color: var(--secondary-color);
+    font-size: 13px;
+    margin: 0;
+    opacity: 0.7;
+    font-style: italic;
 }

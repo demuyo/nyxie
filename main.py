@@ -9,6 +9,7 @@ import traceback
 load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
+TEST_TOKEN = os.getenv('DISCORD_TEST_TOKEN')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -133,7 +134,6 @@ def chat():
     try:
         global conversation_system
         
-        # Pega o sistema de conversa do bot
         if conversation_system is None:
             conversation_system = bot.get_cog('ConversationSystem')
         
@@ -146,15 +146,17 @@ def chat():
         
         user_id = data.get('user_id', 'web_user')
         mensagem = data.get('message', '')
+        history_frontend = data.get('history', [])
+        user_model = data.get('model', None)  # ⬅️ NOVO: recebe modelo
         
         if not mensagem:
             return jsonify({'error': 'Mensagem vazia'}), 400
         
-        # Usa asyncio para chamar a função assíncrona
+        # ⬅️ NOVO: Gera resposta ISOLADA com modelo
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         resposta = loop.run_until_complete(
-            conversation_system.gerar_resposta(user_id, mensagem)
+            gerar_resposta_web(conversation_system, mensagem, history_frontend, user_model)
         )
         loop.close()
         
@@ -167,6 +169,90 @@ def chat():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/models', methods=['GET'])
+def get_models():
+    """Retorna lista de modelos disponíveis"""
+    try:
+        global conversation_system
+        
+        if conversation_system is None:
+            conversation_system = bot.get_cog('ConversationSystem')
+        
+        if conversation_system is None:
+            return jsonify({'error': 'Sistema não disponível'}), 503
+        
+        models = conversation_system.get_models_list()
+        default = conversation_system.default_model
+        
+        return jsonify({
+            'models': models,
+            'default': default
+        })
+    
+    except Exception as e:
+        print(f"❌ Erro ao buscar modelos: {e}")
+        return jsonify({'error': str(e)}), 500
+
+async def gerar_resposta_web(conv_system, mensagem, history, user_model=None):
+    """Gera resposta usando APENAS o histórico do frontend (chat isolado)"""
+    
+    # ⬅️ NOVO: Define modelo (padrão se não especificado)
+    if not user_model or user_model not in conv_system.models_config:
+        user_model = conv_system.default_model
+    
+    max_tokens = conv_system.get_model_tokens(user_model)
+    
+    # Monta mensagens para a API
+    messages = [
+        {"role": "system", "content": conv_system.personalidades["misteriosa"]}
+    ]
+    
+    # ⬅️ USA O HISTÓRICO DO FRONTEND (não do backend)
+    for msg in history:
+        messages.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
+    
+    # Adiciona mensagem atual
+    messages.append({"role": "user", "content": mensagem})
+    
+    # Chama Groq API
+    try:
+        response = await asyncio.to_thread(
+            conv_system.groq_client.chat.completions.create,
+            model=user_model,  # ⬅️ MODELO DINÂMICO
+            messages=messages,
+            temperature=0.85,
+            max_tokens=max_tokens,  # ⬅️ TOKENS DINÂMICOS
+            top_p=0.88,
+        )
+        
+        resposta = response.choices[0].message.content
+        
+        # Limpeza
+        resposta = conv_system.limpar_resposta_cringe(resposta)
+        resposta = conv_system.filtrar_emoticons_excessivos(resposta)
+        
+        # Remove reticências excessivas
+        if resposta.count('...') > 1:
+            partes = resposta.split('...')
+            if len(partes) > 2:
+                resposta = '. '.join(partes[:-1]) + '...' + partes[-1]
+        
+        # Remove "né?" duplicado
+        import re
+        resposta = re.sub(r',?\s*né\?.*né\?', ', né?', resposta, flags=re.IGNORECASE)
+        resposta = re.sub(r'!+', '!', resposta)
+        resposta = re.sub(r'né!', 'né?', resposta, flags=re.IGNORECASE)
+        resposta = re.sub(r'\.\.\.\s*,', ',', resposta)
+        
+        return resposta
+        
+    except Exception as e:
+        print(f"❌ Erro Groq Web: {e}")
+        return f"erro: {e}"
+    
 def run():
     """Roda o servidor Flask com Waitress"""
     # ⬇️ MUDANÇA: Pega porta do ambiente (Render define automaticamente)
@@ -208,7 +294,8 @@ async def load_cogs():
         "cogs.utils",           # defs pra usar nas cogs
         "cogs.utilities",       # !baixar, !search
         "cogs.misc",
-        "cogs.conversation",    # ⬅️ IMPORTANTE: Sistema de conversa
+        "cogs.conversation",
+        "cogs.chatcommands",
         "cogs.downloader",
         "cogs.aiactions",
         "cogs.owner",        
@@ -268,7 +355,7 @@ async def on_command_error(ctx, error):
 async def main():
     keep_alive() 
     await load_cogs()
-    await bot.start(TOKEN)
+    await bot.start(TEST_TOKEN)
 
 if __name__ == "__main__":
     asyncio.run(main())

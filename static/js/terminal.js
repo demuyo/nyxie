@@ -22,7 +22,8 @@ class ChatManager {
                 created: timestamp,
                 modified: timestamp,
                 messages: [],
-                history: []
+                history: [],
+                model: 'llama-3.3-70b-versatile'
             };
             
             this.currentChatId = chatId;
@@ -31,7 +32,6 @@ class ChatManager {
         }
         
         this.initializeSidebar();
-        // ⬅️ NÃO CHAMA loadChatMessages() aqui!
     }
 
     // ==================== CRIAÇÃO E GERENCIAMENTO ====================
@@ -50,7 +50,8 @@ class ChatManager {
             created: timestamp,
             modified: timestamp,
             messages: [],
-            history: [] // ⬅️ NOVO: histórico isolado para cada chat
+            history: [],
+            model: getCurrentModel()
         };
         
         this.currentChatId = chatId;
@@ -76,7 +77,6 @@ class ChatManager {
         
         chat.messages.push(message);
         
-        // ⬅️ NOVO: adiciona ao histórico isolado do chat
         if (!chat.history) chat.history = [];
         chat.history.push({
             role: role,
@@ -94,7 +94,6 @@ class ChatManager {
         this.renderChatList();
     }
 
-    // ⬅️ NOVO: pega histórico isolado do chat atual
     getCurrentChatHistory() {
         if (!this.currentChatId) return [];
         
@@ -115,20 +114,28 @@ class ChatManager {
         this.currentChatId = chatId;
         this.saveCurrentChatId();
         
-        // ⬅️ LIMPA COMPLETAMENTE O OUTPUT
+        // Carrega modelo do chat e atualiza indicador
+        if (chat.model) {
+            localStorage.setItem('nyxie_model', chat.model);
+            if (window.updateModelIndicator) {
+                await window.updateModelIndicator();
+            }
+        }
+    
+        // LIMPA COMPLETAMENTE O OUTPUT
         output.innerHTML = '';
         
-        // ⬅️ SEMPRE CARREGA ASCII ALEATÓRIO (em qualquer chat)
+        // SEMPRE CARREGA ASCII ALEATÓRIO
         try {
             const response = await fetch('/quotes');
             const data = await response.json();
             
             const banner = `${data.ascii_art}
 
-        NYXIE TERMINAL v1.4
-        > ${data.quote}
-        ${data.is_mobile ? "> digite '/help'" : "> digite '/help' para comandos"}
-            `;
+    NYXIE TERMINAL v1.4
+    > ${data.quote}
+    ${data.is_mobile ? "> digite '/help'" : "> digite '/help' para comandos"}
+        `;
             
             const line = document.createElement('div');
             line.className = 'output-line bot-response ascii-art';
@@ -143,15 +150,12 @@ class ChatManager {
             addLine('⛧ close the world, open the nExt', 'bot-response');
         }
         
-        // ⬅️ CARREGA MENSAGENS DO HISTÓRICO
+        // ⬅️ CARREGA MENSAGENS COM SYNTAX HIGHLIGHT
         chat.messages.forEach(msg => {
             if (msg.role === 'user') {
                 addLine(`> ${msg.content}`, 'user-input');
             } else {
-                const lines = msg.content.split('\n');
-                lines.forEach(line => {
-                    if (line.trim()) addLine(line, 'bot-response');
-                });
+                renderMarkdownMessage(msg.content);
             }
         });
         
@@ -225,9 +229,11 @@ class ChatManager {
                 (lastMessage.content.substring(0, 40) + (lastMessage.content.length > 40 ? '...' : '')) : 
                 'Sem mensagens';
             
+            const modelEmoji = this.getModelEmoji(chat.model);
+            
             chatItem.innerHTML = `
                 <div class="chat-item-content" onclick="chatManager.loadChatMessages('${chat.id}')">
-                    <div class="chat-item-title">${this.escapeHtml(chat.title)}</div>
+                    <div class="chat-item-title">${this.escapeHtml(chat.title)} ${modelEmoji}</div>
                     <div class="chat-item-preview">${this.escapeHtml(preview)}</div>
                     <div class="chat-item-time">${this.getRelativeTime(chat.modified)}</div>
                 </div>
@@ -239,6 +245,19 @@ class ChatManager {
             
             chatList.appendChild(chatItem);
         });
+    }
+
+    getModelEmoji(modelId) {
+        if (!modelId) return '';
+        
+        const emojis = {
+            'llama-3.1-8b-instant': '⚡',
+            'llama-3.3-70b-versatile': '🤖',
+            'openai/gpt-oss-20b': '⚙️',
+            'openai/gpt-oss-120b': '🧠'
+        };
+        
+        return emojis[modelId] || '🤖';
     }
 
     // ==================== PROMPTS E INTERAÇÃO ====================
@@ -272,8 +291,6 @@ class ChatManager {
 
     // ==================== INICIALIZAÇÃO DA SIDEBAR ====================
 
-    // ==================== INICIALIZAÇÃO DA SIDEBAR ====================
-
     initializeSidebar() {
         const chatSidebar = document.getElementById('chat-sidebar');
         const configSidebar = document.getElementById('sidebar');
@@ -283,64 +300,62 @@ class ChatManager {
         const closeConfigBtn = document.getElementById('close-menu');
         const newChatBtn = document.getElementById('new-chat-btn');
         
-        // Abre sidebar de chats
-        openChatBtn.onclick = () => {
+        openChatBtn.onclick = (e) => {
+            e.stopPropagation();
             chatSidebar.classList.remove('sidebar-hidden');
             configSidebar.classList.add('sidebar-hidden');
             openConfigBtn.classList.add('btn-hidden');
             openChatBtn.classList.add('btn-hidden');
         };
         
-        // Fecha sidebar de chats
-        toggleChatBtn.onclick = () => {
+        toggleChatBtn.onclick = (e) => {
+            e.stopPropagation();
             chatSidebar.classList.add('sidebar-hidden');
             openConfigBtn.classList.remove('btn-hidden');
             openChatBtn.classList.remove('btn-hidden');
         };
         
-        // Abre sidebar de config
-        openConfigBtn.onclick = () => {
+        openConfigBtn.onclick = (e) => {
+            e.stopPropagation();
             configSidebar.classList.remove('sidebar-hidden');
             chatSidebar.classList.add('sidebar-hidden');
             openConfigBtn.classList.add('btn-hidden');
             openChatBtn.classList.add('btn-hidden');
         };
         
-        // Fecha sidebar de config
-        closeConfigBtn.onclick = () => {
+        closeConfigBtn.onclick = (e) => {
+            e.stopPropagation();
             configSidebar.classList.add('sidebar-hidden');
             openConfigBtn.classList.remove('btn-hidden');
             openChatBtn.classList.remove('btn-hidden');
         };
         
-        // Novo chat
-        newChatBtn.onclick = () => {
+        newChatBtn.onclick = (e) => {
+            e.stopPropagation();
             this.createNewChat();
             chatSidebar.classList.add('sidebar-hidden');
             openConfigBtn.classList.remove('btn-hidden');
             openChatBtn.classList.remove('btn-hidden');
         };
         
-        // Fecha sidebars ao clicar fora
         document.addEventListener('click', (e) => {
-            const crt = document.getElementById('crt');
+            if (chatSidebar.contains(e.target) || 
+                configSidebar.contains(e.target) ||
+                openChatBtn.contains(e.target) || 
+                openConfigBtn.contains(e.target)) {
+                return;
+            }
             
-            // Se clicou no terminal, não faz nada
-            if (crt.contains(e.target)) return;
+            const chatWasOpen = !chatSidebar.classList.contains('sidebar-hidden');
+            const configWasOpen = !configSidebar.classList.contains('sidebar-hidden');
             
-            // Fecha chat sidebar
-            if (!chatSidebar.contains(e.target) && 
-                !openChatBtn.contains(e.target) && 
-                !chatSidebar.classList.contains('sidebar-hidden')) {
+            if (chatWasOpen) {
                 chatSidebar.classList.add('sidebar-hidden');
                 openConfigBtn.classList.remove('btn-hidden');
                 openChatBtn.classList.remove('btn-hidden');
             }
             
-            // Fecha config sidebar
-            if (!configSidebar.contains(e.target) && 
-                !openConfigBtn.contains(e.target) &&
-                !configSidebar.classList.contains('sidebar-hidden')) {
+            if (configWasOpen) {
                 configSidebar.classList.add('sidebar-hidden');
                 openConfigBtn.classList.remove('btn-hidden');
                 openChatBtn.classList.remove('btn-hidden');
@@ -425,6 +440,136 @@ class ChatManager {
 // ==================== INSTÂNCIA GLOBAL ====================
 let chatManager;
 
+// ==================== 🎨 MARKDOWN & SYNTAX HIGHLIGHT ====================
+
+function renderMarkdownMessage(content) {
+    // Detecta blocos de código COM ou SEM linguagem
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push({
+                type: 'text',
+                content: content.substring(lastIndex, match.index)
+            });
+        }
+        
+        let language = match[1] || detectLanguage(match[2]);
+        
+        parts.push({
+            type: 'code',
+            language: language,
+            content: match[2].trim()
+        });
+        
+        lastIndex = match.index + match[0].length;
+    }
+    
+    if (lastIndex < content.length) {
+        parts.push({
+            type: 'text',
+            content: content.substring(lastIndex)
+        });
+    }
+    
+    if (parts.length === 0) {
+        const lines = content.split('\n');
+        lines.forEach(line => {
+            if (line.trim()) addLine(line, 'bot-response');
+        });
+        return;
+    }
+    
+    parts.forEach(part => {
+        if (part.type === 'text') {
+            const lines = part.content.split('\n');
+            lines.forEach(line => {
+                if (line.trim()) addLine(line, 'bot-response');
+            });
+        } else if (part.type === 'code') {
+            addCodeBlock(part.content, part.language);
+        }
+    });
+}
+
+// ==================== DETECÇÃO AUTOMÁTICA DE LINGUAGEM ====================
+
+// ==================== DETECÇÃO AUTOMÁTICA DE LINGUAGEM ====================
+
+function detectLanguage(code) {
+    const c = code.trim().toLowerCase();
+    
+    if (c.includes('def ') || c.includes('import ') || c.includes('print(')) return 'python';
+    if (c.includes('const ') || c.includes('let ') || c.includes('function ')) return 'javascript';
+    if (c.includes('<html') || c.includes('<!DOCTYPE')) return 'html';
+    if (c.includes('{') && c.includes('}') && c.includes(':')) return 'css';
+    if (c.startsWith('{') || c.startsWith('[')) return 'json';
+    if (c.includes('npm ') || c.includes('sudo ') || c.includes('apt ')) return 'bash';
+    if (c.includes('SELECT ') || c.includes('INSERT ')) return 'sql';
+    if (c.includes('public class') || c.includes('import java')) return 'java';
+    if (c.includes('#include') || c.includes('int main')) return 'cpp';
+    if (c.includes('fn ') || c.includes('let mut')) return 'rust';
+    if (c.includes('package ') || c.includes('func ')) return 'go';
+    if (c.startsWith('<?php')) return 'php';
+    if (c.includes('def ') && c.includes('end')) return 'ruby';
+    if (c.startsWith('FROM ') || c.includes('RUN ')) return 'dockerfile';
+    
+    return 'plaintext';
+}
+
+function addCodeBlock(code, language) {
+    const container = document.createElement('div');
+    container.className = 'code-block-container';
+    
+    // Header com linguagem e botão copiar
+    const header = document.createElement('div');
+    header.className = 'code-block-header';
+    header.innerHTML = `
+        <span class="code-language">${language}</span>
+        <button class="code-copy-btn" onclick="copyCode(this)">
+            <span class="copy-text">copiar</span>
+        </button>
+    `;
+    
+    // Bloco de código
+    const pre = document.createElement('pre');
+    const codeEl = document.createElement('code');
+    codeEl.className = `language-${language}`;
+    codeEl.textContent = code;
+    
+    pre.appendChild(codeEl);
+    container.appendChild(header);
+    container.appendChild(pre);
+    
+    output.appendChild(container);
+    
+    // ⬅️ APLICA SYNTAX HIGHLIGHT (Prism.js)
+    if (window.Prism) {
+        Prism.highlightElement(codeEl);
+    }
+    
+    scrollToBottom();
+}
+
+function copyCode(button) {
+    const container = button.closest('.code-block-container');
+    const code = container.querySelector('code').textContent;
+    
+    navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.querySelector('.copy-text').textContent;
+        button.querySelector('.copy-text').textContent = 'copiado!';
+        button.classList.add('copied');
+        
+        setTimeout(() => {
+            button.querySelector('.copy-text').textContent = originalText;
+            button.classList.remove('copied');
+        }, 2000);
+    });
+}
+
 // ==================== COMANDOS SECRETOS ====================
 
 const secretCommands = {
@@ -496,6 +641,39 @@ const secretCommands = {
         addLine('', 'bot-response');
         addLine('use: theme lain, /theme matrix, etc', 'bot-response');
     },
+
+    'model': async () => {
+        const currentModel = getCurrentModel();
+        
+        try {
+            const response = await fetch('/models');
+            const data = await response.json();
+            
+            addLine('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'bot-response');
+            addLine('        ⛧ MODELOS DE IA DISPONÍVEIS ⛧', 'bot-response');
+            addLine('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'bot-response');
+            addLine('', 'bot-response');
+            
+            const currentModelName = data.models.find(m => m.model_id === currentModel)?.name || 'Llama 3.3 70B';
+            addLine(`› modelo atual: ${currentModelName}`, 'bot-response');
+            addLine('', 'bot-response');
+            
+            data.models.forEach(model => {
+                const marker = model.model_id === currentModel ? '→' : ' ';
+                addLine(`${marker} ${model.id}. ${model.name}`, 'bot-response');
+                addLine(`   ${model.tokens} tokens`, 'bot-response');
+                addLine(`   ${model.description}`, 'bot-response');
+                addLine(`   ideal para: ${model.best_for}`, 'bot-response');
+                addLine('', 'bot-response');
+            });
+            
+            addLine('use: /model 1, /model 2, /model 3 ou /model 4', 'bot-response');
+            addLine('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'bot-response');
+            
+        } catch (error) {
+            addLine('erro ao carregar modelos', 'error');
+        }
+    },
     
     'help': () => {
         const helpText = `
@@ -532,6 +710,80 @@ const secretCommands = {
     'clearall': () => chatManager.clearAllHistory()
 };
 
+// ==================== GERENCIAMENTO DE MODELO IA ====================
+
+function getCurrentModel() {
+    const savedModel = localStorage.getItem('nyxie_model');
+    return savedModel || 'llama-3.3-70b-versatile';
+}
+
+function getCurrentChatModel() {
+    if (!window.chatManager || !window.chatManager.currentChatId) {
+        return getCurrentModel();
+    }
+    
+    const chat = window.chatManager.chats[window.chatManager.currentChatId];
+    if (!chat) return getCurrentModel();
+    
+    if (chat.model) {
+        return chat.model;
+    }
+    
+    const defaultModel = getCurrentModel();
+    chat.model = defaultModel;
+    window.chatManager.saveChats();
+    
+    return defaultModel;
+}
+
+function setModel(modelNumber) {
+    const modelMap = {
+        '1': 'llama-3.1-8b-instant',
+        '2': 'llama-3.3-70b-versatile',
+        '3': 'openai/gpt-oss-20b',
+        '4': 'openai/gpt-oss-120b'
+    };
+    
+    const modelId = modelMap[modelNumber];
+    if (modelId) {
+        localStorage.setItem('nyxie_model', modelId);
+        
+        if (window.chatManager && window.chatManager.currentChatId) {
+            const chat = window.chatManager.chats[window.chatManager.currentChatId];
+            if (chat) {
+                chat.model = modelId;
+                chat.modified = new Date().toISOString();
+                window.chatManager.saveChats();
+            }
+        }
+        
+        return modelId;
+    }
+    return null;
+}
+
+async function getModelName(modelId) {
+    try {
+        const response = await fetch('/models');
+        const data = await response.json();
+        const model = data.models.find(m => m.model_id === modelId);
+        return model ? model.name : 'Desconhecido';
+    } catch {
+        return 'Desconhecido';
+    }
+}
+
+window.updateModelIndicator = async function() {
+    const modelId = getCurrentChatModel(); 
+    const modelName = await getModelName(modelId);
+    
+    // Atualiza no menu
+    const indicator = document.getElementById('model-name');
+    if (indicator) {
+        indicator.textContent = modelName.replace('Llama ', '').replace('GPT OSS ', 'GPT ');
+    }
+};
+
 // ==================== EVENT LISTENER PRINCIPAL ====================
 
 input.addEventListener('keydown', async (e) => {
@@ -539,7 +791,6 @@ input.addEventListener('keydown', async (e) => {
         const message = input.value;
         if (!message.trim()) return;
 
-        // ⬅️ SÓ ACEITA COMANDOS COM /
         if (message.startsWith('/')) {
             const args = message.slice(1).trim().split(/\s+/);
             const comando = args[0].toLowerCase();
@@ -550,27 +801,48 @@ input.addEventListener('keydown', async (e) => {
             
             chatManager.addMessage('user', message);
             
-            // Comando /theme
+            if (comando === 'model') {
+                if (!parametro) {
+                    await secretCommands['model']();
+                    chatManager.addMessage('assistant', 'Lista de modelos');
+                    return;
+                }
+                
+                if (['1', '2', '3', '4'].includes(parametro)) {
+                    const modelId = setModel(parametro);
+                    const modelName = await getModelName(modelId);
+                    
+                    if (window.updateModelIndicator) {
+                        await window.updateModelIndicator();
+                    }
+                    
+                    const response = `> modelo alterado: ${modelName}`;
+                    addLine(response, 'bot-response');
+                    chatManager.addMessage('assistant', response);
+                } else {
+                    addLine('escolha entre 1-4', 'error');
+                    chatManager.addMessage('assistant', 'modelo inválido');
+                }
+                return;
+            }
+
             if (comando === 'theme') {
                 handleThemeCommand(parametro);
                 return;
             }
             
-            // Outros comandos
             if (secretCommands[comando]) {
                 await secretCommands[comando]();
                 chatManager.addMessage('assistant', `Comando executado: ${comando}`);
                 return;
             }
             
-            // Comando não encontrado
             const response = `comando '/${comando}' não encontrado. digite /help para ver comandos`;
             addLine(response, 'error');
             chatManager.addMessage('assistant', response);
             return;
         }
         
-        // ⬅️ SE NÃO TEM /, VAI DIRETO PRO CHAT COM A IA
         await processNormalMessage(message);
     }
 });
@@ -601,6 +873,11 @@ function handleThemeCommand(themeName) {
         const response = `> tema alterado: ${themeName}`;
         addLine(response, 'bot-response');
         chatManager.addMessage('assistant', response);
+        
+        const openChatBtn = document.getElementById('open-sidebar-btn');
+        const openConfigBtn = document.getElementById('menu-toggle');
+        openChatBtn.classList.remove('btn-hidden');
+        openConfigBtn.classList.remove('btn-hidden');
     } else {
         addLine('tema inválido', 'error');
         addLine('', 'bot-response');
@@ -615,14 +892,12 @@ async function processNormalMessage(message) {
     
     chatManager.addMessage('user', message);
     
-    // Mostra "pensando..."
     const thinkingLine = document.createElement('div');
     thinkingLine.className = 'output-line bot-response';
     thinkingLine.textContent = '...';
     thinkingLine.id = 'thinking';
     output.appendChild(thinkingLine);
     
-    // ⬅️ ENVIA O HISTÓRICO ISOLADO DO CHAT ATUAL
     try {
         const response = await fetch('/chat', {
             method: 'POST',
@@ -632,7 +907,8 @@ async function processNormalMessage(message) {
             body: JSON.stringify({
                 user_id: getUserId(),
                 message: message,
-                history: chatManager.getCurrentChatHistory() // ⬅️ HISTÓRICO ISOLADO
+                history: chatManager.getCurrentChatHistory(),
+                model: getCurrentChatModel()
             })
         });
         
@@ -667,7 +943,9 @@ async function processNormalMessage(message) {
         }
         
         chatManager.addMessage('assistant', data.response);
-        typeWriter(data.response);
+        
+        // ⬅️ USA MARKDOWN RENDERER COM SYNTAX HIGHLIGHT
+        typeWriterMarkdown(data.response);
         
     } catch (error) {
         document.getElementById('thinking')?.remove();
@@ -678,6 +956,91 @@ async function processNormalMessage(message) {
     }
 }
 
+// ==================== TYPEWRITER COM MARKDOWN ====================
+
+function typeWriterMarkdown(text) {
+    // Detecta blocos de código
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = codeBlockRegex.exec(text)) !== null) {
+        // Texto antes do bloco
+        if (match.index > lastIndex) {
+            parts.push({
+                type: 'text',
+                content: text.substring(lastIndex, match.index)
+            });
+        }
+        
+        // Bloco de código
+        parts.push({
+            type: 'code',
+            language: match[1] || 'plaintext',
+            content: match[2].trim()
+        });
+        
+        lastIndex = match.index + match[0].length;
+    }
+    
+    // ⬅️ CORRIGIDO: usa "text" em vez de "content"
+    if (lastIndex < text.length) {
+        parts.push({
+            type: 'text',
+            content: text.substring(lastIndex)
+        });
+    }
+    
+    // Se não tem código, faz typewriter normal
+    if (parts.length === 0) {
+        typeWriter(text);
+        return;
+    }
+    
+    // Renderiza partes
+    let partIndex = 0;
+    
+    function renderNextPart() {
+        if (partIndex >= parts.length) return;
+        
+        const part = parts[partIndex];
+        
+        if (part.type === 'code') {
+            // Código aparece instantaneamente
+            addCodeBlock(part.content, part.language);
+            partIndex++;
+            renderNextPart();
+        } else {
+            // Texto faz typewriter
+            const lines = part.content.split('\n');
+            let lineIndex = 0;
+            
+            function typeLine() {
+                if (lineIndex >= lines.length) {
+                    partIndex++;
+                    renderNextPart();
+                    return;
+                }
+                
+                const line = lines[lineIndex];
+                if (line.trim()) {
+                    typeWriter(line, 0, () => {
+                        lineIndex++;
+                        typeLine();
+                    });
+                } else {
+                    lineIndex++;
+                    typeLine();
+                }
+            }
+            
+            typeLine();
+        }
+    }
+    
+    renderNextPart();
+}
 // ==================== FUNÇÕES AUXILIARES ====================
 
 function getUserId() {
@@ -706,7 +1069,7 @@ function addLine(text, className = '') {
     scrollToBottom(); 
 }
 
-function typeWriter(text, index = 0) {
+function typeWriter(text, index = 0, callback = null) {
     if (index === 0) {
         const line = document.createElement('div');
         line.className = 'output-line bot-response';
@@ -718,9 +1081,10 @@ function typeWriter(text, index = 0) {
     if (index < text.length) {
         currentLine.textContent += text.charAt(index);
         scrollToBottom();
-        setTimeout(() => typeWriter(text, index + 1), 30);
+        setTimeout(() => typeWriter(text, index + 1, callback), 30);
     } else {
         currentLine.id = '';
+        if (callback) callback();
     }
 }
 
@@ -728,13 +1092,12 @@ function typeWriter(text, index = 0) {
 
 window.onload = async () => {
     chatManager = new ChatManager();
+    window.chatManager = chatManager;
     
-    // ⬅️ SÓ CARREGA O CHAT ATUAL UMA VEZ
     await chatManager.loadChatMessages(chatManager.currentChatId);
     
     scrollToBottom();
     
-    // Carrega tema salvo
     const savedTheme = localStorage.getItem('nyxie_theme') || 'lain';
     document.documentElement.setAttribute('data-theme', savedTheme);
     
@@ -748,27 +1111,13 @@ window.onload = async () => {
         toggleCustomMenu(true);
         loadCustomColors();
     }
+    
+    if (window.updateModelIndicator) {
+        await window.updateModelIndicator();
+    }
 };
 
 // ==================== MENU LATERAL E TEMAS ====================
-
-document.getElementById('menu-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.remove('sidebar-hidden');
-});
-
-document.getElementById('close-menu').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.add('sidebar-hidden');
-});
-
-// Fecha menu ao clicar fora
-document.addEventListener('click', (e) => {
-    const sidebar = document.getElementById('sidebar');
-    const toggle = document.getElementById('menu-toggle');
-    
-    if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-        sidebar.classList.add('sidebar-hidden');
-    }
-});
 
 const toggleCustomMenu = (show) => {
     const customSection = document.getElementById('custom-colors-section');
@@ -779,9 +1128,10 @@ const toggleCustomMenu = (show) => {
     }
 };
 
-// Troca de tema
 document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
         const theme = btn.getAttribute('data-theme');
         
         document.documentElement.setAttribute('data-theme', theme);
@@ -968,3 +1318,16 @@ document.getElementById('reset-custom').addEventListener('click', () => {
 });
 
 loadCustomColors();
+
+async function updateModelIndicator() {
+    const modelId = getCurrentModel();
+    const modelName = await getModelName(modelId);
+    const indicator = document.getElementById('model-name');
+    if (indicator) {
+        indicator.textContent = modelName.replace('Llama ', '').replace('GPT OSS ', 'GPT ');
+    }
+}
+
+// ==================== DETECÇÃO AUTOMÁTICA DE LINGUAGEM ====================
+
+updateModelIndicator();

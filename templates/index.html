@@ -2,10 +2,31 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>NYXIE.TERMINAL</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/terminal.css') }}">
 </head>
+
+<!-- Prism.js Core -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+<!-- Prism.js Languages (adicione os que você precisa) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-ruby.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-docker.min.js"></script>
+
 <body>
     <!-- ==================== SIDEBAR DE CONFIG (DIREITA) ==================== -->
     <div id="sidebar" class="sidebar-hidden">
@@ -71,6 +92,14 @@
                 <button id="reset-custom" class="reset-btn">resetar</button>
             </div>
 
+             <div class="sidebar-section">
+                <h3>modelo atual</h3>
+                <div class="model-display">
+                    <span id="model-name">llama 3.3 70b</span>
+                </div>
+                <p class="model-hint">use /model no terminal para trocar</p>
+            </div>
+
             <!-- About -->
             <div class="sidebar-section">
                 <h3>ABOUT</h3>
@@ -101,6 +130,11 @@
         <div id="chat-list"></div>
     </div>
 
+    <!-- ==================== INDICADOR DE MODELO ==================== -->
+    <div id="model-indicator" title="Modelo IA atual">
+        <span id="model-name">llama 70B</span>
+    </div>
+
     <!-- ==================== BOTÕES FLUTUANTES (DIREITA) ==================== -->
     <div id="menu-toggle" title="Configurações">⚙</div>
     <button id="open-sidebar-btn" title="Abrir Chats">☰</button>
@@ -111,11 +145,18 @@
             <div id="output"></div>
             <div id="input-line">
                 <span class="prompt">root@nyxie:~$</span>
-                <input type="text" id="input" autofocus autocomplete="off">
+                <input 
+                    type="text" 
+                    id="input"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                >
             </div>
         </div>
     </div>
-    
+        
     <!-- ==================== MODAL DO COLOR PICKER ==================== -->
     <div id="color-picker-modal" class="picker-modal-hidden">
         <div class="picker-modal-content">

@@ -17,7 +17,7 @@ class AIActions(commands.Cog):
         self.intencoes = {
             'pesquisar': [
                 r'(?:pesquis[ae]|procur[ae]|busca)(?:.*?(?:sobre|no google|pra mim)?)?[\s:]+(.+)',
-                r'me (?:mostra|fala|diz|manda) (?:sobre )?(.+)',
+                r' (?:mostra|fala|diz) (?:sobre )?(.+)',
                 r'(?:que|quem|o que|oque) (?:é|e|foi|fez|são|sao) (.+)',
             ],
             'baixar': [
