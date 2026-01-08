@@ -338,8 +338,6 @@ body::before {
 
 /* ==================== RESPONSIVIDADE MOBILE PERFEITA ==================== */
 
-/* ==================== RESPONSIVIDADE MOBILE PERFEITA ==================== */
-
 @media (max-width: 768px) {
     #crt {
         height: 100vh;
@@ -356,7 +354,7 @@ body::before {
     }
     
     #input-line {
-        position: sticky; /* ⬅️ MANTÉM STICKY */
+        position: sticky; 
         bottom: 0;
         padding: 10px 0;
         background: #000;
@@ -364,11 +362,11 @@ body::before {
     }
     
     .prompt {
-        font-size: 16px; /* ⬅️ AUMENTA (era 14px) */
+        font-size: 16px;
     }
     
     #input {
-        font-size: 16px !important; /* ⬅️ EVITA ZOOM */
+        font-size: 16px !important; 
     }
     
     #sidebar,
@@ -498,7 +496,7 @@ body::before {
     white-space: pre;
     overflow-x: auto;
     font-size: 18px;
-    line-height: 1.2;
+    line-height: 1.1;
     letter-spacing: 0;
 }
 

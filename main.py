@@ -436,7 +436,6 @@ async def main():
     keep_alive() 
     await load_cogs()
     
-    # ⬅️ Usa TOKEN de produção ou teste
     token = TOKEN if TOKEN else TEST_TOKEN
     if not token:
         print("❌ ERRO: Nenhum token configurado!")
