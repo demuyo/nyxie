@@ -443,7 +443,7 @@ async def main():
         return
     
     print(f"🔑 Usando token: {'PRODUCTION' if token == TOKEN else 'TEST'}")
-    await bot.start(TEST_TOKEN)
+    await bot.start(token)
 
 if __name__ == "__main__":
     asyncio.run(main())
