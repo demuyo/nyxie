@@ -10,6 +10,7 @@ class ChatManager {
     constructor() {
         this.chats = this.loadChats();
         this.currentChatId = this.loadCurrentChatId();
+        this.pendingConfirmation = null; // ⬅️ SISTEMA DE CONFIRMAÇÃO
         
         // ⬅️ NÃO CARREGA NADA AQUI - só cria se necessário
         if (Object.keys(this.chats).length === 0) {
@@ -55,6 +56,7 @@ class ChatManager {
         };
         
         this.currentChatId = chatId;
+        this.pendingConfirmation = null; // ⬅️ LIMPA CONFIRMAÇÃO
         this.saveChats();
         this.saveCurrentChatId();
         this.renderChatList();
@@ -112,6 +114,7 @@ class ChatManager {
         if (!chat) return;
         
         this.currentChatId = chatId;
+        this.pendingConfirmation = null; // ⬅️ LIMPA CONFIRMAÇÃO AO TROCAR CHAT
         this.saveCurrentChatId();
         
         // Carrega modelo do chat e atualiza indicador
@@ -391,6 +394,7 @@ class ChatManager {
             localStorage.removeItem('nyxie_chats');
             localStorage.removeItem('nyxie_current_chat');
             this.chats = {};
+            this.pendingConfirmation = null;
             this.createNewChat();
             addLine('✅ Histórico completo apagado!', 'bot-response');
         }
@@ -497,25 +501,23 @@ function renderMarkdownMessage(content) {
 
 // ==================== DETECÇÃO AUTOMÁTICA DE LINGUAGEM ====================
 
-// ==================== DETECÇÃO AUTOMÁTICA DE LINGUAGEM ====================
-
 function detectLanguage(code) {
     const c = code.trim().toLowerCase();
     
     if (c.includes('def ') || c.includes('import ') || c.includes('print(')) return 'python';
     if (c.includes('const ') || c.includes('let ') || c.includes('function ')) return 'javascript';
-    if (c.includes('<html') || c.includes('<!DOCTYPE')) return 'html';
+    if (c.includes('<html') || c.includes('<!doctype')) return 'html';
     if (c.includes('{') && c.includes('}') && c.includes(':')) return 'css';
     if (c.startsWith('{') || c.startsWith('[')) return 'json';
     if (c.includes('npm ') || c.includes('sudo ') || c.includes('apt ')) return 'bash';
-    if (c.includes('SELECT ') || c.includes('INSERT ')) return 'sql';
+    if (c.includes('select ') || c.includes('insert ')) return 'sql';
     if (c.includes('public class') || c.includes('import java')) return 'java';
     if (c.includes('#include') || c.includes('int main')) return 'cpp';
     if (c.includes('fn ') || c.includes('let mut')) return 'rust';
     if (c.includes('package ') || c.includes('func ')) return 'go';
     if (c.startsWith('<?php')) return 'php';
     if (c.includes('def ') && c.includes('end')) return 'ruby';
-    if (c.startsWith('FROM ') || c.includes('RUN ')) return 'dockerfile';
+    if (c.startsWith('from ') || c.includes('run ')) return 'dockerfile';
     
     return 'plaintext';
 }
@@ -629,6 +631,7 @@ const secretCommands = {
             addLine(`quote: ${data.quote}`, 'bot-response');
             addLine(`current_chat: ${chatManager.currentChatId}`, 'bot-response');
             addLine(`history_length: ${chatManager.getCurrentChatHistory().length}`, 'bot-response');
+            addLine(`pending_confirmation: ${chatManager.pendingConfirmation !== null}`, 'bot-response');
         } catch (error) {
             addLine('erro no debug', 'error');
         }
@@ -639,11 +642,11 @@ const secretCommands = {
         addLine('temas disponíveis:', 'bot-response');
         validThemes.forEach(t => addLine(`• ${t}`, 'bot-response'));
         addLine('', 'bot-response');
-        addLine('use: theme lain, /theme matrix, etc', 'bot-response');
+        addLine('use: /theme lain, /theme matrix, etc', 'bot-response');
     },
 
     'model': async () => {
-        const currentModel = getCurrentModel();
+        const currentModel = getCurrentChatModel();
         
         try {
             const response = await fetch('/models');
@@ -695,9 +698,10 @@ const secretCommands = {
     • void       - ...
     • debug      - mostra info
     • theme      - lista temas
+    • model      - mostra modelos
 
 › TEMAS
-    • theme [nome] ou /theme [nome]
+    • /theme [nome]
     • disponíveis: lain, matrix, cyberpunk, void, marimo, custom
     
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -754,6 +758,7 @@ function setModel(modelNumber) {
                 chat.model = modelId;
                 chat.modified = new Date().toISOString();
                 window.chatManager.saveChats();
+                window.chatManager.renderChatList(); // ⬅️ ATUALIZA EMOJI
             }
         }
         
@@ -790,6 +795,61 @@ input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
         const message = input.value;
         if (!message.trim()) return;
+
+        // ⬅️ SISTEMA DE CONFIRMAÇÃO DE MODELO
+        if (chatManager.pendingConfirmation) {
+            const msgLower = message.toLowerCase().trim();
+            
+            // Confirma
+            if (['sim', 's', 'yes', 'pode', 'vai', 'ok', 'beleza', 'troca'].includes(msgLower)) {
+                addLine(`> ${message}`, 'user-input');
+                input.value = '';
+                
+                const originalMessage = chatManager.pendingConfirmation.originalMessage;
+                const recommendedModel = chatManager.pendingConfirmation.recommendedModel;
+                
+                // Troca modelo
+                const modelNumber = {
+                    'llama-3.1-8b-instant': '1',
+                    'llama-3.3-70b-versatile': '2',
+                    'openai/gpt-oss-20b': '3',
+                    'openai/gpt-oss-120b': '4'
+                }[recommendedModel];
+                
+                setModel(modelNumber);
+                await window.updateModelIndicator();
+                
+                const modelName = await getModelName(recommendedModel);
+                addLine(`✅ modelo trocado para: ${modelName}`, 'bot-response');
+                
+                chatManager.pendingConfirmation = null;
+                
+                // Processa mensagem original
+                await processNormalMessage(originalMessage);
+                return;
+            }
+            
+            // Rejeita
+            if (['não', 'nao', 'n', 'no', 'cancela', 'deixa', 'fica'].includes(msgLower)) {
+                addLine(`> ${message}`, 'user-input');
+                input.value = '';
+                
+                const currentModelName = await getModelName(getCurrentChatModel());
+                addLine(`ok, mantendo o modelo atual (${currentModelName})`, 'bot-response');
+                addLine('se quiser trocar depois: /model', 'bot-response');
+                
+                chatManager.pendingConfirmation = null;
+                return;
+            }
+            
+            // Não entendeu
+            addLine(`> ${message}`, 'user-input');
+            input.value = '';
+            addLine('não entendi. responde:', 'bot-response');
+            addLine('• sim / pode / vai → pra trocar pro modelo forte', 'bot-response');
+            addLine('• não / cancela → pra manter o atual', 'bot-response');
+            return;
+        }
 
         if (message.startsWith('/')) {
             const args = message.slice(1).trim().split(/\s+/);
@@ -942,6 +1002,26 @@ async function processNormalMessage(message) {
             return;
         }
         
+        // ⬅️ SISTEMA DE CONFIRMAÇÃO DE MODELO
+        if (data.model_recommendation) {
+            chatManager.pendingConfirmation = {
+                originalMessage: message,
+                recommendedModel: data.model_recommendation.model_id,
+                reason: data.model_recommendation.reason
+            };
+            
+            addLine('', 'bot-response');
+            addLine(`⚠️ ${data.model_recommendation.reason}`, 'bot-response');
+            addLine('', 'bot-response');
+            addLine(`quer trocar pro ${data.model_recommendation.model_name}?`, 'bot-response');
+            addLine('modelo atual: ' + await getModelName(getCurrentChatModel()), 'bot-response');
+            addLine('', 'bot-response');
+            addLine('responde sim pra trocar ou não pra manter o atual', 'bot-response');
+            
+            chatManager.addMessage('assistant', data.response);
+            return;
+        }
+        
         chatManager.addMessage('assistant', data.response);
         
         // ⬅️ USA MARKDOWN RENDERER COM SYNTAX HIGHLIGHT
@@ -977,14 +1057,14 @@ function typeWriterMarkdown(text) {
         // Bloco de código
         parts.push({
             type: 'code',
-            language: match[1] || 'plaintext',
+            language: match[1] || detectLanguage(match[2]),
             content: match[2].trim()
         });
         
         lastIndex = match.index + match[0].length;
     }
     
-    // ⬅️ CORRIGIDO: usa "text" em vez de "content"
+    // Texto final
     if (lastIndex < text.length) {
         parts.push({
             type: 'text',
@@ -1041,6 +1121,7 @@ function typeWriterMarkdown(text) {
     
     renderNextPart();
 }
+
 // ==================== FUNÇÕES AUXILIARES ====================
 
 function getUserId() {
@@ -1318,16 +1399,3 @@ document.getElementById('reset-custom').addEventListener('click', () => {
 });
 
 loadCustomColors();
-
-async function updateModelIndicator() {
-    const modelId = getCurrentModel();
-    const modelName = await getModelName(modelId);
-    const indicator = document.getElementById('model-name');
-    if (indicator) {
-        indicator.textContent = modelName.replace('Llama ', '').replace('GPT OSS ', 'GPT ');
-    }
-}
-
-// ==================== DETECÇÃO AUTOMÁTICA DE LINGUAGEM ====================
-
-updateModelIndicator();

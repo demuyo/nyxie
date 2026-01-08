@@ -82,6 +82,9 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24).hex())
 # Referência global para o sistema de conversa
 conversation_system = None
 
+# ⬅️ NOVO: Armazena confirmações pendentes da web
+web_pending_confirmations = {}
+
 @app.route('/')
 def home():
     """Renderiza o terminal web"""
@@ -130,9 +133,9 @@ def get_quotes():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Endpoint para conversação web"""
+    """Endpoint para conversação web com sistema de confirmação de modelo"""
     try:
-        global conversation_system
+        global conversation_system, web_pending_confirmations
         
         if conversation_system is None:
             conversation_system = bot.get_cog('ConversationSystem')
@@ -147,12 +150,39 @@ def chat():
         user_id = data.get('user_id', 'web_user')
         mensagem = data.get('message', '')
         history_frontend = data.get('history', [])
-        user_model = data.get('model', None)  # ⬅️ NOVO: recebe modelo
+        user_model = data.get('model', None)
         
         if not mensagem:
             return jsonify({'error': 'Mensagem vazia'}), 400
         
-        # ⬅️ NOVO: Gera resposta ISOLADA com modelo
+        # ⬅️ NOVO: Verifica se precisa recomendar modelo
+        if user_model and user_model != 'openai/gpt-oss-120b':
+            recomendacao = conversation_system.deve_recomendar_modelo_forte(
+                user_id, 
+                mensagem, 
+                user_model
+            )
+            
+            if recomendacao:
+                # Salva confirmação pendente
+                web_pending_confirmations[user_id] = {
+                    'mensagem_original': mensagem,
+                    'modelo_recomendado': recomendacao['modelo_recomendado'],
+                    'razao': recomendacao['razao']
+                }
+                
+                modelo_rec_info = conversation_system.models_config[recomendacao['modelo_recomendado']]
+                
+                return jsonify({
+                    'response': f"ó, {recomendacao['razao']}\n\nquer trocar pro modelo mais forte?",
+                    'model_recommendation': {
+                        'model_id': recomendacao['modelo_recomendado'],
+                        'model_name': modelo_rec_info['name'],
+                        'reason': recomendacao['razao']
+                    }
+                })
+        
+        # Gera resposta
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         resposta = loop.run_until_complete(
@@ -171,7 +201,7 @@ def chat():
 
 @app.route('/models', methods=['GET'])
 def get_models():
-    """Retorna lista de modelos disponíveis"""
+    """Retorna lista de modelos disponíveis com informações detalhadas"""
     try:
         global conversation_system
         
@@ -181,12 +211,35 @@ def get_models():
         if conversation_system is None:
             return jsonify({'error': 'Sistema não disponível'}), 503
         
-        models = conversation_system.get_models_list()
-        default = conversation_system.default_model
+        # ⬅️ NOVO: Retorna modelos com descrições
+        models_list = []
+        for idx, (model_id, config) in enumerate(conversation_system.models_config.items(), 1):
+            model_info = {
+                'id': idx,
+                'model_id': model_id,
+                'name': config['name'],
+                'tokens': config['tokens']
+            }
+            
+            # Adiciona descrições personalizadas
+            if 'llama-3.1-8b' in model_id:
+                model_info['description'] = 'rápido e leve'
+                model_info['best_for'] = 'conversas simples, respostas rápidas'
+            elif 'llama-3.3-70b' in model_id:
+                model_info['description'] = 'balanceado'
+                model_info['best_for'] = 'conversas gerais, código simples'
+            elif 'gpt-oss-20b' in model_id:
+                model_info['description'] = 'potente'
+                model_info['best_for'] = 'código médio, explicações detalhadas'
+            elif 'gpt-oss-120b' in model_id:
+                model_info['description'] = 'modelo forte'
+                model_info['best_for'] = 'código complexo, projetos completos'
+            
+            models_list.append(model_info)
         
         return jsonify({
-            'models': models,
-            'default': default
+            'models': models_list,
+            'default': conversation_system.default_model
         })
     
     except Exception as e:
@@ -196,7 +249,7 @@ def get_models():
 async def gerar_resposta_web(conv_system, mensagem, history, user_model=None):
     """Gera resposta usando APENAS o histórico do frontend (chat isolado)"""
     
-    # ⬅️ NOVO: Define modelo (padrão se não especificado)
+    # Define modelo (padrão se não especificado)
     if not user_model or user_model not in conv_system.models_config:
         user_model = conv_system.default_model
     
@@ -207,7 +260,7 @@ async def gerar_resposta_web(conv_system, mensagem, history, user_model=None):
         {"role": "system", "content": conv_system.personalidades["misteriosa"]}
     ]
     
-    # ⬅️ USA O HISTÓRICO DO FRONTEND (não do backend)
+    # Usa o histórico do frontend (não do backend)
     for msg in history:
         messages.append({
             "role": msg["role"],
@@ -219,43 +272,65 @@ async def gerar_resposta_web(conv_system, mensagem, history, user_model=None):
     
     # Chama Groq API
     try:
+        print(f"🔄 Chamando Groq [{conv_system.models_config[user_model]['name']}]...")
+        
         response = await asyncio.to_thread(
             conv_system.groq_client.chat.completions.create,
-            model=user_model,  # ⬅️ MODELO DINÂMICO
+            model=user_model,
             messages=messages,
             temperature=0.85,
-            max_tokens=max_tokens,  # ⬅️ TOKENS DINÂMICOS
+            max_tokens=max_tokens,
             top_p=0.88,
+            timeout=60.0  # ⬅️ TIMEOUT CONFIGURÁVEL
         )
         
-        resposta = response.choices[0].message.content
+        # ⬅️ VALIDAÇÃO: Verifica se resposta existe
+        if not response.choices or not response.choices[0].message.content:
+            raise ValueError("Resposta vazia da API")
+        
+        resposta = response.choices[0].message.content.strip()
+        
+        # ⬅️ VALIDAÇÃO: Verifica se não está vazio após strip
+        if not resposta:
+            raise ValueError("Conteúdo vazio após strip()")
+        
+        # Formata código com syntax highlight
+        resposta = conv_system.formatar_codigo_discord(resposta)
         
         # Limpeza
-        resposta = conv_system.limpar_resposta_cringe(resposta)
-        resposta = conv_system.filtrar_emoticons_excessivos(resposta)
+        resposta_limpa = conv_system.limpar_resposta(resposta)
         
-        # Remove reticências excessivas
-        if resposta.count('...') > 1:
-            partes = resposta.split('...')
-            if len(partes) > 2:
-                resposta = '. '.join(partes[:-1]) + '...' + partes[-1]
+        # ⬅️ VALIDAÇÃO: Se limpeza deixou vazio, usa original
+        if not resposta_limpa or len(resposta_limpa.strip()) == 0:
+            print(f"⚠️ Resposta vazia após limpeza. Original tinha {len(resposta)} chars")
+            resposta_limpa = resposta
         
-        # Remove "né?" duplicado
-        import re
-        resposta = re.sub(r',?\s*né\?.*né\?', ', né?', resposta, flags=re.IGNORECASE)
-        resposta = re.sub(r'!+', '!', resposta)
-        resposta = re.sub(r'né!', 'né?', resposta, flags=re.IGNORECASE)
-        resposta = re.sub(r'\.\.\.\s*,', ',', resposta)
+        # ⬅️ GARANTIA FINAL: Nunca retorna vazio
+        if not resposta_limpa or len(resposta_limpa.strip()) == 0:
+            resposta_limpa = "desculpa, tive um problema ao gerar a resposta. tenta de novo?"
         
-        return resposta
+        print(f"⚡ Groq Web [{conv_system.models_config[user_model]['name']}]: {response.usage.completion_tokens} tokens")
         
-    except Exception as e:
-        print(f"❌ Erro Groq Web: {e}")
-        return f"erro: {e}"
+        return resposta_limpa
+        
+    except asyncio.TimeoutError:
+        print(f"⏱️ Timeout no modelo {user_model}")
+        return (f"o modelo `{conv_system.models_config[user_model]['name']}` demorou demais\n\n"
+               f"tenta reformular ou usar um modelo mais rápido")
     
+    except Exception as e:
+        print(f"❌ Erro Groq Web: {type(e).__name__}: {e}")
+        
+        # Erro 400 ou rate limit
+        if "400" in str(e) or "rate_limit" in str(e).lower():
+            return (f"o modelo tá sobrecarregado agora\n\n"
+                   f"aguarda uns segundos ou usa outro modelo")
+        
+        # Erro genérico
+        return f"erro ao gerar resposta: {e}\n\ntenta reformular a pergunta"
+
 def run():
     """Roda o servidor Flask com Waitress"""
-    # ⬇️ MUDANÇA: Pega porta do ambiente (Render define automaticamente)
     port = int(os.getenv('PORT', 8080))
     print(f"🌐 Servidor web iniciado em http://0.0.0.0:{port}")
     serve(app, host='0.0.0.0', port=port, threads=4)
@@ -294,7 +369,7 @@ async def load_cogs():
         "cogs.utils",           # defs pra usar nas cogs
         "cogs.utilities",       # !baixar, !search
         "cogs.misc",
-        "cogs.conversation",
+        "cogs.conversation",    # ⬅️ Sistema principal de conversa
         "cogs.chatcommands",
         "cogs.downloader",
         "cogs.aiactions",
@@ -319,6 +394,9 @@ async def on_ready():
     conversation_system = bot.get_cog('ConversationSystem')
     if conversation_system:
         print("💬 Sistema de conversa carregado")
+        print(f"📊 Modelos disponíveis: {len(conversation_system.models_config)}")
+        for model_id, config in conversation_system.models_config.items():
+            print(f"   • {config['name']} ({config['tokens']} tokens)")
     else:
         print("⚠️  Sistema de conversa não encontrado")
 
@@ -349,12 +427,22 @@ async def on_command_error(ctx, error):
     else:
         embed.description = f"`{error}`"
         embed.set_footer(text="something went wrong")
+        print(f"❌ Erro não tratado: {error}")
+        traceback.print_exc()
     
     await ctx.send(embed=embed, delete_after=5)
 
 async def main():
     keep_alive() 
     await load_cogs()
+    
+    # ⬅️ Usa TOKEN de produção ou teste
+    token = TOKEN if TOKEN else TEST_TOKEN
+    if not token:
+        print("❌ ERRO: Nenhum token configurado!")
+        return
+    
+    print(f"🔑 Usando token: {'PRODUCTION' if token == TOKEN else 'TEST'}")
     await bot.start(TEST_TOKEN)
 
 if __name__ == "__main__":
