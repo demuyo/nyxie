@@ -114,6 +114,68 @@ def detectar_ffmpeg():
     print("⚠️ FFmpeg não encontrado")
     return None
 
+# ==================== CONVERSÃO DE ARQUIVOS ====================
+
+def converter_arquivo(caminho_entrada, formato_saida):
+    """
+    Converte arquivo de mídia para outro formato usando FFmpeg.
+    Retorna (sucesso, caminho_saida) ou (False, mensagem_erro)
+    """
+    ffmpeg = detectar_ffmpeg()
+    
+    if not ffmpeg:
+        return False, "FFmpeg não instalado"
+    
+    # Prepara nome do arquivo de saída
+    nome_base = os.path.splitext(os.path.basename(caminho_entrada))[0]
+    caminho_saida = f"downloads/{nome_base}_convertido.{formato_saida}"
+    
+    # Configurações específicas por formato
+    configs = {
+        'mp4': ['-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-c:a', 'aac', '-b:a', '192k'],
+        'mp3': ['-vn', '-ar', '44100', '-ac', '2', '-b:a', '320k'],
+        'wav': ['-vn', '-ar', '44100', '-ac', '2'],
+        'aac': ['-vn', '-c:a', 'aac', '-b:a', '256k'],
+        'flac': ['-vn', '-c:a', 'flac'],
+        'webm': ['-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-c:a', 'libopus'],
+        'avi': ['-c:v', 'libx264', '-c:a', 'mp3', '-b:a', '192k'],
+        'mkv': ['-c:v', 'libx264', '-c:a', 'aac'],
+        'mov': ['-c:v', 'libx264', '-c:a', 'aac'],
+        'gif': ['-vf', 'fps=15,scale=480:-1:flags=lanczos', '-loop', '0'],
+    }
+    
+    params = configs.get(formato_saida, ['-c', 'copy'])
+    
+    # Comando FFmpeg
+    cmd = [ffmpeg, '-i', caminho_entrada, '-y'] + params + [caminho_saida]
+    
+    print(f"\n🔄 Convertendo para {formato_saida.upper()}...")
+    print(f"📝 Comando: {' '.join(cmd)}")
+    
+    try:
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=600,  # 10 minutos max
+            text=True
+        )
+        
+        if result.returncode == 0 and os.path.exists(caminho_saida):
+            tamanho = os.path.getsize(caminho_saida) / (1024*1024)
+            print(f"✅ Conversão completa: {tamanho:.2f}MB")
+            return True, caminho_saida
+        else:
+            print(f"❌ FFmpeg erro:\n{result.stderr[:500]}")
+            return False, "Erro na conversão"
+            
+    except subprocess.TimeoutExpired:
+        print("❌ Timeout - arquivo muito grande ou processo travado")
+        return False, "Timeout (máx 10min)"
+    except Exception as e:
+        print(f"❌ Erro: {e}")
+        return False, str(e)
+
 # ==================== DOWNLOAD PRINCIPAL ====================
 
 def baixar_video(url, formato='mp4'):
@@ -165,8 +227,8 @@ def baixar_video(url, formato='mp4'):
     # ====== CONFIGURAÇÃO YT-DLP ======
     ydl_opts = {
         'outtmpl': 'downloads/temp_%(title)s.%(ext)s',
-        'quiet': False,  # Mostra progresso
-        'no_warnings': False,  # Mostra avisos
+        'quiet': False,
+        'no_warnings': False,
         'retries': 10,
         'fragment_retries': 10,
         'file_access_retries': 10,
@@ -206,7 +268,7 @@ def baixar_video(url, formato='mp4'):
             }],
             'prefer_ffmpeg': True,
         })
-        print("🎵 Modo: Extração de áudio MP3 (192kbps)")
+        print("🎵 Modo: Extração de áudio MP3 (320kbps)")
         
     elif formato == "wav":
         ydl_opts.update({
@@ -512,6 +574,195 @@ class Downloader(commands.Cog):
         # Limpa
         try:
             os.remove(caminho_novo)
+        except:
+            pass
+
+    @commands.command(
+        aliases=["cv", "convert"],
+        usage="(formato) + anexo",
+        brief="converte arquivos de mídia",
+        help="converte vídeos/áudios para outro formato. Anexe arquivo e especifique formato."
+    )
+    async def converter(self, ctx, formato: str = None):
+        """
+        Converte arquivo anexado para outro formato.
+        
+        Formatos suportados:
+        Vídeo: mp4, avi, mkv, mov, webm, gif
+        Áudio: mp3, wav, aac, flac
+        
+        Uso:
+        !converter mp4 (+ anexo)
+        !cv mp3 (+ anexo)
+        !convert gif (+ anexo)
+        """
+        utils = self.bot.get_cog('utils')
+        
+        # Valida formato
+        formatos_validos = ['mp4', 'mp3', 'wav', 'avi', 'mkv', 'mov', 'webm', 'gif', 'aac', 'flac']
+        
+        if not formato or formato.lower() not in formatos_validos:
+            embed = utils.base_embed("formato inválido", None)
+            embed.add_field(
+                name="formatos suportados",
+                value="**Vídeo:** `mp4` `avi` `mkv` `mov` `webm` `gif`\n**Áudio:** `mp3` `wav` `aac` `flac`",
+                inline=False
+            )
+            embed.add_field(
+                name="uso",
+                value="`!converter mp4` (+ anexo)\n`!cv mp3` (+ anexo)",
+                inline=False
+            )
+            return await ctx.send(embed=embed)
+        
+        formato = formato.lower()
+        
+        # Verifica anexo
+        if not ctx.message.attachments:
+            embed = utils.base_embed("nenhum arquivo anexado", None)
+            embed.add_field(
+                name="como usar",
+                value=f"1. Anexe um arquivo de vídeo/áudio\n2. Digite `!converter {formato}`\n3. Aguarde a conversão",
+                inline=False
+            )
+            return await ctx.send(embed=embed)
+        
+        anexo = ctx.message.attachments[0]
+        
+        # Verifica tamanho
+        tamanho_mb = anexo.size / (1024*1024)
+        if tamanho_mb > 200:
+            embed = utils.base_embed("arquivo muito grande", None)
+            embed.add_field(name="tamanho", value=f"`{tamanho_mb:.2f}MB`", inline=True)
+            embed.add_field(name="limite", value="`200MB`", inline=True)
+            return await ctx.send(embed=embed)
+        
+        # ==================== LOADING ====================
+        embed_loading = utils.base_embed("convertendo", None)
+        embed_loading.add_field(name="arquivo", value=f"`{anexo.filename[:50]}`", inline=False)
+        embed_loading.add_field(name="tamanho", value=f"`{tamanho_mb:.2f}MB`", inline=True)
+        embed_loading.add_field(name="formato destino", value=f"`{formato.upper()}`", inline=True)
+        embed_loading.add_field(name="status", value="baixando arquivo...", inline=False)
+        msg = await ctx.send(embed=embed_loading)
+        
+        # ==================== DOWNLOAD DO ANEXO ====================
+        os.makedirs('downloads', exist_ok=True)
+        
+        nome_original = nome_seguro(os.path.splitext(anexo.filename)[0], ctx.message.id)
+        extensao_original = os.path.splitext(anexo.filename)[1]
+        caminho_entrada = f"downloads/{nome_original}{extensao_original}"
+        
+        try:
+            await anexo.save(caminho_entrada)
+            print(f"✅ Arquivo baixado: {caminho_entrada}")
+        except Exception as e:
+            embed_erro = utils.base_embed("erro ao baixar anexo", str(e))
+            return await msg.edit(embed=embed_erro)
+        
+        # ==================== CONVERSÃO ====================
+        embed_loading.set_field_at(3, name="status", value=f"convertendo para {formato.upper()}...", inline=False)
+        await msg.edit(embed=embed_loading)
+        
+        loop = asyncio.get_event_loop()
+        sucesso, resultado = await loop.run_in_executor(None, converter_arquivo, caminho_entrada, formato)
+        
+        # Remove arquivo original
+        try:
+            os.remove(caminho_entrada)
+        except:
+            pass
+        
+        if not sucesso:
+            embed_erro = utils.base_embed("erro na conversão", resultado)
+            embed_erro.add_field(
+                name="possíveis causas",
+                value="• FFmpeg não instalado\n• Formato incompatível\n• Arquivo corrompido\n• Timeout (>10min)",
+                inline=False
+            )
+            return await msg.edit(embed=embed_erro)
+        
+        caminho_saida = resultado
+        tamanho_final_mb = round(os.path.getsize(caminho_saida) / (1024*1024), 2)
+        nome_final = os.path.basename(caminho_saida)
+        
+        # ==================== ENVIO ====================
+        LIMITE_DISCORD = 10
+        
+        # Discord direto (≤10MB)
+        if tamanho_final_mb <= LIMITE_DISCORD:
+            try:
+                embed_up = utils.base_embed("enviando", None)
+                embed_up.add_field(name="tamanho final", value=f"`{tamanho_final_mb}MB`", inline=True)
+                await msg.edit(embed=embed_up)
+                
+                file = discord.File(caminho_saida, filename=nome_final)
+                
+                embed_final = utils.base_embed("conversão completa", f"**{anexo.filename}**")
+                embed_final.add_field(name="formato", value=f"`{formato.upper()}`", inline=True)
+                embed_final.add_field(name="tamanho original", value=f"`{tamanho_mb:.2f}MB`", inline=True)
+                embed_final.add_field(name="tamanho final", value=f"`{tamanho_final_mb}MB`", inline=True)
+                embed_final.add_field(name="cdn", value="discord", inline=True)
+                embed_final.set_footer(text=f"por {ctx.author.name}")
+                
+                await msg.delete()
+                await ctx.send(embed=embed_final, file=file)
+                
+                os.remove(caminho_saida)
+                return
+                
+            except discord.HTTPException as e:
+                print(f"❌ Discord upload falhou: {e}")
+                try:
+                    await msg.delete()
+                except:
+                    pass
+                msg = await ctx.send(embed=utils.base_embed("enviando pro catbox", "arquivo convertido é grande demais"))
+        
+        # Catbox (>10MB)
+        if tamanho_final_mb > 200:
+            embed_grande = utils.base_embed("arquivo convertido muito grande", None)
+            embed_grande.add_field(name="tamanho", value=f"`{tamanho_final_mb}MB`", inline=True)
+            embed_grande.add_field(name="limite", value="`200MB`", inline=True)
+            embed_grande.add_field(name="salvo em", value=f"`{caminho_saida}`", inline=False)
+            return await msg.edit(embed=embed_grande)
+        
+        embed_catbox = utils.base_embed("enviando pro catbox", None)
+        embed_catbox.add_field(name="tamanho", value=f"`{tamanho_final_mb}MB`", inline=True)
+        embed_catbox.add_field(name="aguarde", value="pode demorar...", inline=True)
+        
+        try:
+            await msg.edit(embed=embed_catbox)
+        except discord.NotFound:
+            msg = await ctx.send(embed=embed_catbox)
+        
+        link = await loop.run_in_executor(None, upload_catbox_seguro, caminho_saida)
+        
+        if not link:
+            embed_falha = utils.base_embed("upload falhou", None)
+            embed_falha.add_field(name="salvo em", value=f"`{caminho_saida}`", inline=False)
+            try:
+                await msg.edit(embed=embed_falha)
+            except:
+                await ctx.send(embed=embed_falha)
+            return
+        
+        # Embed final Catbox
+        embed_final = utils.base_embed("conversão completa", f"**{anexo.filename}**")
+        embed_final.add_field(name="formato", value=f"`{formato.upper()}`", inline=True)
+        embed_final.add_field(name="tamanho original", value=f"`{tamanho_mb:.2f}MB`", inline=True)
+        embed_final.add_field(name="tamanho final", value=f"`{tamanho_final_mb}MB`", inline=True)
+        embed_final.add_field(name="cdn", value="catbox", inline=True)
+        embed_final.add_field(name="download", value=f"**[CLIQUE AQUI]({link})**", inline=False)
+        embed_final.set_footer(text=f"por {ctx.author.name} • catbox.moe")
+        
+        try:
+            await msg.edit(embed=embed_final)
+        except:
+            await ctx.send(embed=embed_final)
+        
+        # Limpa
+        try:
+            os.remove(caminho_saida)
         except:
             pass
 

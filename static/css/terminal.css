@@ -1190,7 +1190,8 @@ body::before {
 }
 
 .code-language::before {
-    content: '⛧ ';
+    /*content: '⛧ ';*/
+    content: ' ▸ ';
     color: var(--secondary-color);
 }
 

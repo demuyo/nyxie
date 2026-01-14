@@ -125,7 +125,7 @@ def get_quotes():
         import traceback
         traceback.print_exc()
         return jsonify({
-            'quote': '⛧ close the world, open the nExt',
+            'quote': 'close the world, open the nExt',
             'ascii_name': 'fallback',
             'ascii_art': '> NYXIE.TERMINAL',
             'is_mobile': False

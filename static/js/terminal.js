@@ -150,7 +150,7 @@ class ChatManager {
             addLine('   NYXIE TERMINAL   ', 'bot-response');
             addLine('━━━━━━━━━━━━━━━━━━━━', 'bot-response');
             addLine('', 'bot-response');
-            addLine('⛧ close the world, open the nExt', 'bot-response');
+            addLine('close the world, open the nExt', 'bot-response');
         }
         
         // ⬅️ CARREGA MENSAGENS COM SYNTAX HIGHLIGHT
@@ -170,7 +170,7 @@ class ChatManager {
 
     deleteChat(chatId) {
         if (Object.keys(this.chats).length <= 1) {
-            addLine('⚠️ Não é possível deletar o último chat!', 'error');
+            addLine('não é possível deletar o último chat!', 'error');
             return;
         }
         
@@ -231,12 +231,11 @@ class ChatManager {
             const preview = lastMessage ? 
                 (lastMessage.content.substring(0, 40) + (lastMessage.content.length > 40 ? '...' : '')) : 
                 'Sem mensagens';
-            
-            const modelEmoji = this.getModelEmoji(chat.model);
+        
             
             chatItem.innerHTML = `
                 <div class="chat-item-content" onclick="chatManager.loadChatMessages('${chat.id}')">
-                    <div class="chat-item-title">${this.escapeHtml(chat.title)} ${modelEmoji}</div>
+                    <div class="chat-item-title">${this.escapeHtml(chat.title)}</div>
                     <div class="chat-item-preview">${this.escapeHtml(preview)}</div>
                     <div class="chat-item-time">${this.getRelativeTime(chat.modified)}</div>
                 </div>
@@ -248,19 +247,6 @@ class ChatManager {
             
             chatList.appendChild(chatItem);
         });
-    }
-
-    getModelEmoji(modelId) {
-        if (!modelId) return '';
-        
-        const emojis = {
-            'llama-3.1-8b-instant': '⚡',
-            'llama-3.3-70b-versatile': '🤖',
-            'openai/gpt-oss-20b': '⚙️',
-            'openai/gpt-oss-120b': '🧠'
-        };
-        
-        return emojis[modelId] || '🤖';
     }
 
     // ==================== PROMPTS E INTERAÇÃO ====================
@@ -277,7 +263,7 @@ class ChatManager {
 
     promptDelete(chatId) {
         if (Object.keys(this.chats).length <= 1) {
-            alert('⚠️ Não é possível deletar o último chat!');
+            alert('não é possível deletar o último chat!');
             return;
         }
         
@@ -390,13 +376,13 @@ class ChatManager {
     // ==================== FUNÇÕES ESPECIAIS ====================
 
     clearAllHistory() {
-        if (confirm('⚠️ Isso vai deletar TODOS os chats! Confirma?')) {
+        if (confirm('isso vai deletar TODOS os chats! Confirma?')) {
             localStorage.removeItem('nyxie_chats');
             localStorage.removeItem('nyxie_current_chat');
             this.chats = {};
             this.pendingConfirmation = null;
             this.createNewChat();
-            addLine('✅ Histórico completo apagado!', 'bot-response');
+            addLine('histórico completo apagado!', 'bot-response');
         }
     }
 
@@ -421,7 +407,7 @@ class ChatManager {
         a.click();
         URL.revokeObjectURL(url);
         
-        addLine('✅ Chat exportado com sucesso!', 'bot-response');
+        addLine('chat exportado com sucesso!', 'bot-response');
     }
 
     showStats() {
@@ -653,7 +639,8 @@ const secretCommands = {
             const data = await response.json();
             
             addLine('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'bot-response');
-            addLine('        ⛧ MODELOS DE IA DISPONÍVEIS ⛧', 'bot-response');
+            //addLine('        ⛧ MODELOS DE IA DISPONÍVEIS ⛧', 'bot-response');
+            addLine('         MODELOS DE IA DISPONÍVEIS ', 'bot-response');
             addLine('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'bot-response');
             addLine('', 'bot-response');
             
@@ -681,7 +668,7 @@ const secretCommands = {
     'help': () => {
         const helpText = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        ⛧ NYXIE TERMINAL - COMANDOS ⛧
+        NYXIE TERMINAL - COMANDOS 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 › COMANDOS DE CHAT
@@ -708,6 +695,36 @@ const secretCommands = {
         `;
         addLine(helpText, 'bot-response');
     },
+
+        /*const helpText = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        ⛧ NYXIE TERMINAL - COMANDOS ⛧
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+› COMANDOS DE CHAT
+    • history    - mostra estatísticas
+    • export     - exporta chat atual (.md)
+    • clearall   - apaga TODO histórico
+    • clear      - limpa tela (mantém histórico)
+
+› COMANDOS SECRETOS
+    • glitch     - efeito glitch (0.5s)
+    • matrix     - ???
+    • lain       - reference
+    • reload     - nova quote + ascii
+    • void       - ...
+    • debug      - mostra info
+    • theme      - lista temas
+    • model      - mostra modelos
+
+› TEMAS
+    • /theme [nome]
+    • disponíveis: lain, matrix, cyberpunk, void, marimo, custom
+    
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `;
+        addLine(helpText, 'bot-response');
+    },*/
     
     'history': () => chatManager.showStats(),
     'export': () => chatManager.exportCurrentChat(),
@@ -758,7 +775,7 @@ function setModel(modelNumber) {
                 chat.model = modelId;
                 chat.modified = new Date().toISOString();
                 window.chatManager.saveChats();
-                window.chatManager.renderChatList(); // ⬅️ ATUALIZA EMOJI
+                window.chatManager.renderChatList(); 
             }
         }
         
@@ -820,7 +837,7 @@ input.addEventListener('keydown', async (e) => {
                 await window.updateModelIndicator();
                 
                 const modelName = await getModelName(recommendedModel);
-                addLine(`✅ modelo trocado para: ${modelName}`, 'bot-response');
+                addLine(`modelo trocado para: ${modelName}`, 'bot-response');
                 
                 chatManager.pendingConfirmation = null;
                 
@@ -1011,7 +1028,7 @@ async function processNormalMessage(message) {
             };
             
             addLine('', 'bot-response');
-            addLine(`⚠️ ${data.model_recommendation.reason}`, 'bot-response');
+            addLine(`${data.model_recommendation.reason}`, 'bot-response');
             addLine('', 'bot-response');
             addLine(`quer trocar pro ${data.model_recommendation.model_name}?`, 'bot-response');
             addLine('modelo atual: ' + await getModelName(getCurrentChatModel()), 'bot-response');
