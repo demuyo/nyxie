@@ -20,11 +20,12 @@ downloads/
 *.mp4
 *.mp3
 *.wav
-
+start.sh
 
 # IDEs
 .vscode/
 .idea/
+.venv/
 
 # Owner data
 blacklist.json
