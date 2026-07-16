@@ -375,10 +375,6 @@ async def load_cogs():
         "cogs.aiactions",
         "cogs.owner",        
         "cogs.moderation",
-<<<<<<< HEAD
-        "cogs.monsterhunter",
-=======
->>>>>>> 3e34e646ad7e7de7ec65fc20488d8125edd31f2d
     ]
     
     for cog in cogs:
