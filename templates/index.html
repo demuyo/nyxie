@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>NYXIE.TERMINAL</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/terminal.css') }}">
+</head>
+
+<!-- Prism.js Core -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+<!-- Prism.js Languages (adicione os que você precisa) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-ruby.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-docker.min.js"></script>
+
+<body>
+    <!-- ==================== SIDEBAR DE CONFIG (DIREITA) ==================== -->
+    <div id="sidebar" class="sidebar-hidden">
+        <div class="sidebar-header">
+            <span>CONFIG</span>
+            <button id="close-menu">×</button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Temas -->
+            <div class="sidebar-section">
+                <h3>TEMA</h3>
+                <div class="theme-grid">
+                    <button class="theme-btn" data-theme="lain">lain</button>
+                    <button class="theme-btn" data-theme="matrix">matrix</button>
+                    <button class="theme-btn" data-theme="cyberpunk">cyber</button>
+                    <button class="theme-btn" data-theme="void">void</button>
+                    <button class="theme-btn" data-theme="marimo">marimo</button>
+                    <button class="theme-btn" id="custom-theme-btn" data-theme="custom">custom</button>
+                </div>
+            </div>
+            
+            <!-- Custom Colors (escondido por padrão) -->
+            <div class="sidebar-section custom-hidden" id="custom-colors-section">
+                <h3>CUSTOM</h3>
+                
+                <div class="color-picker-group">
+                    <label for="primary-color-display">primary</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="primary-preview" style="background: #b19cd9;"></div>
+                        <input type="text" class="color-hex-input" id="primary-hex" value="#B19CD9" maxlength="7">
+                        <input type="color" id="primary-color" value="#b19cd9" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="color-picker-group">
+                    <label for="secondary-color-display">secondary</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="secondary-preview" style="background: #ff6ec7;"></div>
+                        <input type="text" class="color-hex-input" id="secondary-hex" value="#FF6EC7" maxlength="7">
+                        <input type="color" id="secondary-color" value="#ff6ec7" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="color-picker-group">
+                    <label for="prompt-color-display">prompt</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="prompt-preview" style="background: #d4a5ff;"></div>
+                        <input type="text" class="color-hex-input" id="prompt-hex" value="#D4A5FF" maxlength="7">
+                        <input type="color" id="prompt-color" value="#d4a5ff" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="color-picker-group">
+                    <label for="error-color-display">error</label>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="error-preview" style="background: #ff4444;"></div>
+                        <input type="text" class="color-hex-input" id="error-hex" value="#FF4444" maxlength="7">
+                        <input type="color" id="error-color" value="#ff4444" style="display: none;">
+                    </div>
+                </div>
+                
+                <button id="reset-custom" class="reset-btn">resetar</button>
+            </div>
+
+             <div class="sidebar-section">
+                <h3>modelo atual</h3>
+                <div class="model-display">
+                    <span id="model-name">llama 3.3 70b</span>
+                </div>
+                <p class="model-hint">use /model no terminal para trocar</p>
+            </div>
+
+            <!-- About -->
+            <div class="sidebar-section">
+                <h3>ABOUT</h3>
+                <p class="about-text">
+                    NYXIE.TERMINAL v1.4<br>
+                    <br>
+                    desenvolvido por<br>
+                    <!--<a href="https://twitter.com/demuyo016" target="_blank" class="link">@demuyo016</a><br>-->
+                    <a" target="_blank" class="link">yellow</a><br>
+                    <br>
+                    powered by groq<br>
+                    inspired by lain<br>
+                    <br>
+                    <a href="https://github.com/demuyo" target="_blank" class="link">github</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SIDEBAR DE CHATS (DIREITA) ==================== -->
+    <div id="chat-sidebar" class="sidebar-hidden">
+        <div class="chat-sidebar-header">
+            <h3>chats</h3>
+            <div class="chat-header-actions">
+                <button id="new-chat-btn" title="Novo Chat">+</button>
+                <button id="toggle-sidebar-btn" title="Fechar">✕</button>
+            </div>
+        </div>
+        <div id="chat-list"></div>
+    </div>
+
+    <!-- ==================== INDICADOR DE MODELO ==================== -->
+    <div id="model-indicator" title="Modelo IA atual">
+        <span id="model-name">llama 70B</span>
+    </div>
+
+    <!-- ==================== BOTÕES FLUTUANTES (DIREITA) ==================== -->
+    <div id="menu-toggle" title="Configurações">⚙</div>
+    <button id="open-sidebar-btn" title="Abrir Chats">☰</button>
+
+    <!-- ==================== TERMINAL ==================== -->
+    <div id="crt">
+        <div id="terminal">
+            <div id="output"></div>
+            <div id="input-line">
+                <span class="prompt">root@nyxie:~$</span>
+                <input 
+                    type="text" 
+                    id="input"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                >
+            </div>
+        </div>
+    </div>
+        
+    <!-- ==================== MODAL DO COLOR PICKER ==================== -->
+    <div id="color-picker-modal" class="picker-modal-hidden">
+        <div class="picker-modal-content">
+            <div class="picker-header">
+                <span id="picker-title">selecione a cor</span>
+                <button id="close-picker">×</button>
+            </div>
+            
+            <div class="picker-body">
+                <canvas id="color-canvas" width="280" height="200"></canvas>
+                
+                <div class="hue-slider-container">
+                    <canvas id="hue-canvas" width="280" height="20"></canvas>
+                    <div id="hue-selector" class="slider-selector"></div>
+                </div>
+                
+                <div class="color-info">
+                    <div class="color-preview-large" id="picker-preview"></div>
+                    <div class="color-inputs">
+                        <div class="input-group">
+                            <label>HEX</label>
+                            <input type="text" id="picker-hex-input" value="#B19CD9" maxlength="7">
+                        </div>
+                        <div class="rgb-inputs">
+                            <div class="input-group">
+                                <label>R</label>
+                                <input type="number" id="picker-r" min="0" max="255" value="177">
+                            </div>
+                            <div class="input-group">
+                                <label>G</label>
+                                <input type="number" id="picker-g" min="0" max="255" value="156">
+                            </div>
+                            <div class="input-group">
+                                <label>B</label>
+                                <input type="number" id="picker-b" min="0" max="255" value="217">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="picker-confirm" class="picker-confirm-btn">confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ==================== SCRIPTS ==================== -->
+    <script src="{{ url_for('static', filename='js/color-picker.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
+</body>
+</html>

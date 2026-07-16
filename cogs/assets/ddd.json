@@ -1,0 +1,339 @@
+{
+  "ddd": [
+    {
+      "codigo": "11",
+      "estado": "SP",
+      "regiao": "São Paulo (capital e região metropolitana)"
+    },
+    {
+      "codigo": "12",
+      "estado": "SP",
+      "regiao": "São José dos Campos e região"
+    },
+    {
+      "codigo": "13",
+      "estado": "SP",
+      "regiao": "Santos e região"
+    },
+    {
+      "codigo": "14",
+      "estado": "SP",
+      "regiao": "Bauru e região"
+    },
+    {
+      "codigo": "15",
+      "estado": "SP",
+      "regiao": "Sorocaba e região"
+    },
+    {
+      "codigo": "16",
+      "estado": "SP",
+      "regiao": "Ribeirão Preto e região"
+    },
+    {
+      "codigo": "17",
+      "estado": "SP",
+      "regiao": "São José do Rio Preto e região"
+    },
+    {
+      "codigo": "18",
+      "estado": "SP",
+      "regiao": "Presidente Prudente e região"
+    },
+    {
+      "codigo": "19",
+      "estado": "SP",
+      "regiao": "Campinas e região"
+    },
+    {
+      "codigo": "21",
+      "estado": "RJ",
+      "regiao": "Rio de Janeiro (capital e região metropolitana)"
+    },
+    {
+      "codigo": "22",
+      "estado": "RJ",
+      "regiao": "Campos dos Goytacazes e região"
+    },
+    {
+      "codigo": "24",
+      "estado": "RJ",
+      "regiao": "Petrópolis, Volta Redonda e região"
+    },
+    {
+      "codigo": "27",
+      "estado": "ES",
+      "regiao": "Vitória e todo o estado"
+    },
+    {
+      "codigo": "28",
+      "estado": "ES",
+      "regiao": "Cachoeiro de Itapemirim e região"
+    },
+    {
+      "codigo": "31",
+      "estado": "MG",
+      "regiao": "Belo Horizonte e região metropolitana"
+    },
+    {
+      "codigo": "32",
+      "estado": "MG",
+      "regiao": "Juiz de Fora e região"
+    },
+    {
+      "codigo": "33",
+      "estado": "MG",
+      "regiao": "Governador Valadares e região"
+    },
+    {
+      "codigo": "34",
+      "estado": "MG",
+      "regiao": "Uberlândia e região"
+    },
+    {
+      "codigo": "35",
+      "estado": "MG",
+      "regiao": "Poços de Caldas, Varginha e região"
+    },
+    {
+      "codigo": "37",
+      "estado": "MG",
+      "regiao": "Divinópolis e região"
+    },
+    {
+      "codigo": "38",
+      "estado": "MG",
+      "regiao": "Montes Claros e região"
+    },
+    {
+      "codigo": "41",
+      "estado": "PR",
+      "regiao": "Curitiba e região metropolitana"
+    },
+    {
+      "codigo": "42",
+      "estado": "PR",
+      "regiao": "Ponta Grossa e região"
+    },
+    {
+      "codigo": "43",
+      "estado": "PR",
+      "regiao": "Londrina e região"
+    },
+    {
+      "codigo": "44",
+      "estado": "PR",
+      "regiao": "Maringá e região"
+    },
+    {
+      "codigo": "45",
+      "estado": "PR",
+      "regiao": "Foz do Iguaçu e região"
+    },
+    {
+      "codigo": "46",
+      "estado": "PR",
+      "regiao": "Francisco Beltrão, Pato Branco e região"
+    },
+    {
+      "codigo": "47",
+      "estado": "SC",
+      "regiao": "Joinville, Blumenau e região"
+    },
+    {
+      "codigo": "48",
+      "estado": "SC",
+      "regiao": "Florianópolis e região"
+    },
+    {
+      "codigo": "49",
+      "estado": "SC",
+      "regiao": "Chapecó, Lages e região"
+    },
+    {
+      "codigo": "51",
+      "estado": "RS",
+      "regiao": "Porto Alegre e região metropolitana"
+    },
+    {
+      "codigo": "53",
+      "estado": "RS",
+      "regiao": "Pelotas e região"
+    },
+    {
+      "codigo": "54",
+      "estado": "RS",
+      "regiao": "Caxias do Sul e região"
+    },
+    {
+      "codigo": "55",
+      "estado": "RS",
+      "regiao": "Santa Maria e região"
+    },
+    {
+      "codigo": "61",
+      "estado": "DF",
+      "regiao": "Brasília e região"
+    },
+    {
+      "codigo": "62",
+      "estado": "GO",
+      "regiao": "Goiânia e região"
+    },
+    {
+      "codigo": "63",
+      "estado": "TO",
+      "regiao": "Palmas e todo o estado"
+    },
+    {
+      "codigo": "64",
+      "estado": "GO",
+      "regiao": "Rio Verde e região"
+    },
+    {
+      "codigo": "65",
+      "estado": "MT",
+      "regiao": "Cuiabá e região"
+    },
+    {
+      "codigo": "66",
+      "estado": "MT",
+      "regiao": "Rondonópolis e região"
+    },
+    {
+      "codigo": "67",
+      "estado": "MS",
+      "regiao": "Campo Grande e todo o estado"
+    },
+    {
+      "codigo": "68",
+      "estado": "AC",
+      "regiao": "Rio Branco e todo o estado"
+    },
+    {
+      "codigo": "69",
+      "estado": "RO",
+      "regiao": "Porto Velho e todo o estado"
+    },
+    {
+      "codigo": "71",
+      "estado": "BA",
+      "regiao": "Salvador e região metropolitana"
+    },
+    {
+      "codigo": "73",
+      "estado": "BA",
+      "regiao": "Ilhéus e região"
+    },
+    {
+      "codigo": "74",
+      "estado": "BA",
+      "regiao": "Juazeiro e região"
+    },
+    {
+      "codigo": "75",
+      "estado": "BA",
+      "regiao": "Feira de Santana e região"
+    },
+    {
+      "codigo": "77",
+      "estado": "BA",
+      "regiao": "Vitória da Conquista e região"
+    },
+    {
+      "codigo": "79",
+      "estado": "SE",
+      "regiao": "Aracaju e todo o estado"
+    },
+    {
+      "codigo": "81",
+      "estado": "PE",
+      "regiao": "Recife e região metropolitana"
+    },
+    {
+      "codigo": "82",
+      "estado": "AL",
+      "regiao": "Maceió e todo o estado"
+    },
+    {
+      "codigo": "83",
+      "estado": "PB",
+      "regiao": "João Pessoa e todo o estado"
+    },
+    {
+      "codigo": "84",
+      "estado": "RN",
+      "regiao": "Natal e todo o estado"
+    },
+    {
+      "codigo": "85",
+      "estado": "CE",
+      "regiao": "Fortaleza e região metropolitana"
+    },
+    {
+      "codigo": "86",
+      "estado": "PI",
+      "regiao": "Teresina e região"
+    },
+    {
+      "codigo": "87",
+      "estado": "PE",
+      "regiao": "Petrolina, Garanhuns e região"
+    },
+    {
+      "codigo": "88",
+      "estado": "CE",
+      "regiao": "Juazeiro do Norte, Sobral e região"
+    },
+    {
+      "codigo": "89",
+      "estado": "PI",
+      "regiao": "Picos, Floriano e região"
+    },
+    {
+      "codigo": "91",
+      "estado": "PA",
+      "regiao": "Belém e região metropolitana"
+    },
+    {
+      "codigo": "92",
+      "estado": "AM",
+      "regiao": "Manaus e região"
+    },
+    {
+      "codigo": "93",
+      "estado": "PA",
+      "regiao": "Santarém e região"
+    },
+    {
+      "codigo": "94",
+      "estado": "PA",
+      "regiao": "Marabá e região"
+    },
+    {
+      "codigo": "95",
+      "estado": "RR",
+      "regiao": "Boa Vista e todo o estado"
+    },
+    {
+      "codigo": "96",
+      "estado": "AP",
+      "regiao": "Macapá e todo o estado"
+    },
+    {
+      "codigo": "97",
+      "estado": "AM",
+      "regiao": "Interior do Amazonas"
+    },
+    {
+      "codigo": "98",
+      "estado": "MA",
+      "regiao": "São Luís e região"
+    },
+    {
+      "codigo": "99",
+      "estado": "MA",
+      "regiao": "Imperatriz, Caxias e região"
+    }
+  ]
+}
