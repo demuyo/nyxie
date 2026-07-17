@@ -17,7 +17,7 @@ COMFYUI_URL = "http://127.0.0.1:8188"
 # ⚠️ ALTERE ISSO PARA O CAMINHO REAL DO SEU COMFYUI NO UBUNTU
 COMFYUI_DIR = "/home/demuyo/ComfyUI" 
 # Comando para iniciar (se usar ambiente virtual (venv), coloque o caminho absoluto do python do venv)
-COMFYUI_CMD = ["./start.sh"] 
+COMFYUI_CMD = ["bash", "start.sh"] 
 
 WORKFLOWS = {
     "anime": "cogs/assets/workflows/anime.json",

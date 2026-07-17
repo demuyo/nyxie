@@ -20,7 +20,7 @@ def get_prefix(bot, message):
         owner_cog = bot.get_cog('Owner')
         if owner_cog and str(message.guild.id) in owner_cog.prefixes:
             return owner_cog.prefixes[str(message.guild.id)]
-    return '>'
+    return '!'
 
 bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None)
 
@@ -370,7 +370,7 @@ async def load_cogs():
         "cogs.utilities",       # !baixar, !search
         "cogs.misc",
         "cogs.conversation",    # ⬅️ Sistema principal de conversa
-        "cogs.chatcommands",
+        # "cogs.chatcommands",
         "cogs.downloader",
         "cogs.aiactions",
         "cogs.owner",        
@@ -391,16 +391,6 @@ async def load_cogs():
 async def on_ready():
     global conversation_system
     print(f"🤖 Bot online como {bot.user}")
-    
-    # Pega referência do sistema de conversa
-    conversation_system = bot.get_cog('ConversationSystem')
-    if conversation_system:
-        print("💬 Sistema de conversa carregado")
-        print(f"📊 Modelos disponíveis: {len(conversation_system.models_config)}")
-        for model_id, config in conversation_system.models_config.items():
-            print(f"   • {config['name']} ({config['tokens']} tokens)")
-    else:
-        print("⚠️  Sistema de conversa não encontrado")
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -438,7 +428,7 @@ async def main():
     keep_alive() 
     await load_cogs()
     
-    token = TEST
+    token = TOKEN
     if not token:
         print("❌ ERRO: Nenhum token configurado!")
         return
