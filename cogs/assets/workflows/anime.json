@@ -1,0 +1,490 @@
+{
+  "1": {
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "anima_baseV10_txt.safetensors",
+      "type": "stable_diffusion",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "3": {
+    "inputs": {
+      "model_name": "diffusion_models/anima_baseV10.safetensors",
+      "sage_attention": "auto",
+      "torch_compile": false
+    },
+    "class_type": "AnimaBoosterLoader",
+    "_meta": {
+      "title": "Anima Booster Loader (BSS)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "threshold": 0.15,
+      "teacache_version": "v2 (Standard Precise)",
+      "adaptive_mode": true,
+      "early_steps_factor": 0.4,
+      "late_steps_factor": 1.8,
+      "start_percent": 0,
+      "end_percent": 0.95,
+      "cache_device": "cuda",
+      "model": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "AnimaTeaCache",
+    "_meta": {
+      "title": "Anima TeaCache (BSS)"
+    }
+  },
+  "5": {
+    "inputs": {
+      "preset": "Custom",
+      "width": 1024,
+      "height": 1920,
+      "batch_size": 1
+    },
+    "class_type": "AnimaLatentImage",
+    "_meta": {
+      "title": "Anima Latent Image (BSS)"
+    }
+  },
+  "6": {
+    "inputs": {
+      "seed": 310646602788925,
+      "steps": 20,
+      "cfg": 4,
+      "sampler_name": "er_sde",
+      "scheduler": "beta57",
+      "denoise": 1,
+      "fovea_strength": 3,
+      "sharpness": 0.5,
+      "mask_inertia": 0.95,
+      "model": [
+        "50",
+        0
+      ],
+      "positive": [
+        "43",
+        1
+      ],
+      "negative": [
+        "8",
+        1
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "FLS_SamplerV4",
+    "_meta": {
+      "title": "FLSampler (BSS)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "group_mode": true,
+      "default_active": true,
+      "allow_strength_adjustment": true,
+      "toggle_trigger_words": {
+        "__value__": [
+          {
+            "text": "photobashing",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "photobashing",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "@photobashing",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "@photobashing",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "digital painting, blender \\(meduim\\),painterly, impasto, brush strokes,@wlop",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "digital painting",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              },
+              {
+                "text": "blender \\(meduim\\)",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              },
+              {
+                "text": "painterly",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              },
+              {
+                "text": "impasto",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              },
+              {
+                "text": "brush strokes",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              },
+              {
+                "text": "@wlop",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "wlopstyle",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "wlopstyle",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "brushstroke",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "brushstroke",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "oil painting \\(medium\\)",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "oil painting \\(medium\\)",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "chiaroscuro",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "chiaroscuro",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "impasto",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "impasto",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "impressionism",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "impressionism",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "painterly",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "painterly",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "@Corusc4nt",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "@Corusc4nt",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "NJsw33t",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "NJsw33t",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          },
+          {
+            "text": "@sw33t",
+            "active": true,
+            "highlighted": false,
+            "strength": null,
+            "items": [
+              {
+                "text": "@sw33t",
+                "active": true,
+                "highlighted": false,
+                "strength": null
+              }
+            ]
+          }
+        ]
+      },
+      "orinalMessage": "photobashing,, @photobashing,, digital painting, blender \\(meduim\\),painterly, impasto, brush strokes,@wlop,, wlopstyle,, brushstroke,, oil painting \\(medium\\),, chiaroscuro,, impasto,, impressionism,, painterly,, @Corusc4nt,, NJsw33t,, @sw33t",
+      "trigger_words": [
+        "50",
+        2
+      ]
+    },
+    "class_type": "TriggerWord Toggle (LoraManager)",
+    "_meta": {
+      "title": "TriggerWord Toggle (LoraManager)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "positive": "worst quality, low quality, score_1, score_2, score_3, jpeg artifacts,watermark, text, signature, artist name, logo, web address, bad hands, mutated hands, extra fingers, missing fingers, extra digits, fewer digits, fused fingers, deformed hands, poorly drawn hands, bad anatomy, deformed fingers, hands with too many fingers,",
+      "auto_random": false,
+      "lora_str": "",
+      "temp_str": "",
+      "temp_lora_str": "",
+      "random_template": "",
+      "打开提示词编辑器": "",
+      "打开Lora堆": "",
+      "opt_clip": [
+        "50",
+        1
+      ]
+    },
+    "class_type": "WeiLinPromptUI",
+    "_meta": {
+      "title": "All-Round WeiLin Prompt Editor"
+    }
+  },
+  "38": {
+    "inputs": {
+      "samples": [
+        "6",
+        0
+      ],
+      "vae": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "39": {
+    "inputs": {
+      "enable": true,
+      "filename_prefix": "AnimaSD",
+      "file_format": "PNG",
+      "quality": 100,
+      "embed_workflow": true,
+      "save_clean_copy": false,
+      "enable_preview": true,
+      "images": [
+        "38",
+        0
+      ],
+      "positive_prompt": [
+        "43",
+        0
+      ],
+      "negative_prompt": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImagePlus",
+    "_meta": {
+      "title": "保存图像增强版 (Save Image Plus)"
+    }
+  },
+  "43": {
+    "inputs": {
+      "positive": "",
+      "auto_random": false,
+      "lora_str": "",
+      "temp_str": "[{\"id\":\"token_1_1779567055672\",\"text\":\"1girl\",\"translate\":\"1女孩\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(255, 123, 2, .4)\",\"isLoraTag\":false},{\"id\":\"token_2_1779567055672\",\"text\":\"black hair\",\"translate\":\"黑色头发\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(255, 123, 2, .4)\",\"isLoraTag\":false},{\"id\":\"token_3_1779567055672\",\"text\":\"yawning\",\"translate\":\"打哈欠\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(241, 229, 140, .4)\",\"isLoraTag\":false},{\"id\":\"token_4_1779567055672\",\"text\":\"medium hair\",\"translate\":\"中发\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(255, 123, 2, .4)\",\"isLoraTag\":false},{\"id\":\"token_5_1779567055672\",\"text\":\"wolf cut\",\"translate\":\"狼 cut\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(189, 182, 107, .4)\",\"isLoraTag\":false},{\"id\":\"token_6_1779567055672\",\"text\":\"messy waves\",\"translate\":\"凌乱 波浪\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(31, 144, 255, .4)\",\"isLoraTag\":false},{\"id\":\"token_7_1779567055673\",\"text\":\"detailed eyes\",\"translate\":\"detailed 眼睛\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(255, 123, 2, .4)\",\"isLoraTag\":false},{\"id\":\"token_8_1779567055673\",\"text\":\"skin details\",\"translate\":\"skin details\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_9_1779567055673\",\"text\":\"standing\",\"translate\":\"站立\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(241, 229, 140, .4)\",\"isLoraTag\":false},{\"id\":\"token_10_1779567055673\",\"text\":\"close up\",\"translate\":\"close up\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_11_1779567055673\",\"text\":\"depth of field\",\"translate\":\"景深（协调人景）\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(99, 201, 2, .4)\",\"isLoraTag\":false},{\"id\":\"token_12_1779567055673\",\"text\":\"pouting\",\"translate\":\"pouting\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_13_1779567055673\",\"text\":\"slight blush\",\"translate\":\"slight 脸红\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(255, 123, 2, .4)\",\"isLoraTag\":false},{\"id\":\"token_14_1779567055673\",\"text\":\"looking away\",\"translate\":\"looking away\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_15_1779567055673\",\"text\":\"natural pose\",\"translate\":\"natural 姿势\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(241, 229, 140, .4)\",\"isLoraTag\":false},{\"id\":\"token_16_1779567055673\",\"text\":\"realistic texture\",\"translate\":\"写实 texture\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(0, 255, 255, .4)\",\"isLoraTag\":false},{\"id\":\"token_17_1779567055673\",\"text\":\"looking at viewer\",\"translate\":\"looking at viewer\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_18_1779567055673\",\"text\":\"shadowed face\",\"translate\":\"shadowed face\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_19_1779567055673\",\"text\":\"double exposure\",\"translate\":\"double exposure\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_20_1779567055673\",\"text\":\"overlapping image\",\"translate\":\"overlapping image\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_21_1779567055673\",\"text\":\"ghosting\",\"translate\":\"ghosting\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_22_1779567055673\",\"text\":\"translucent overlay\",\"translate\":\"translucent overlay\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_23_1779567055673\",\"text\":\"faint silhouette\",\"translate\":\"faint 剪影\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(0, 255, 255, .4)\",\"isLoraTag\":false},{\"id\":\"token_24_1779567055673\",\"text\":\"glowing\",\"translate\":\"发光\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_25_1779567055673\",\"text\":\"glitch\",\"translate\":\"故障\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_26_1779567055673\",\"text\":\"chromatic aberration\",\"translate\":\"chromatic aberration\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_27_1779567055673\",\"text\":\"dense white scratches\",\"translate\":\"dense white 抓痕\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_28_1779567055673\",\"text\":\"chaotic lines\",\"translate\":\"chaotic lines\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_29_1779567055673\",\"text\":\"scratched border\",\"translate\":\"scratched 边框\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(0, 255, 255, .4)\",\"isLoraTag\":false},{\"id\":\"token_30_1779567055673\",\"text\":\"framing\",\"translate\":\"framing\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_31_1779567055673\",\"text\":\"screen damage\",\"translate\":\"屏幕 damage\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_32_1779567055673\",\"text\":\"vignette\",\"translate\":\"vignette\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":null,\"isLoraTag\":false},{\"id\":\"token_33_1779567055673\",\"text\":\"dark background\",\"translate\":\"暗的 background\",\"isPunctuation\":false,\"isEditing\":false,\"isHidden\":false,\"color\":\"rgba(0, 255, 255, .4)\",\"isLoraTag\":false}]",
+      "temp_lora_str": "",
+      "random_template": "",
+      "打开提示词编辑器": "",
+      "打开Lora堆": "",
+      "opt_text": [
+        "7",
+        0
+      ],
+      "opt_clip": [
+        "50",
+        1
+      ]
+    },
+    "class_type": "WeiLinPromptUI",
+    "_meta": {
+      "title": "All-Round WeiLin Prompt Editor"
+    }
+  },
+  "50": {
+    "inputs": {
+      "__lm_autocomplete_meta_text": {
+        "version": 1,
+        "textWidgetName": "text"
+      },
+      "text": "<lora:wlop-000015:0.80:0.80> <lora:anima-base-1-painterly-v2:0.80> <lora:Coruscant v1 EP11:0.50:0.50> <lora:AnimaNSS5anime:0.45> <lora:p1ct01-000016:0.50:0.50> <lora:expression_helper_ANIME:1.00>",
+      "loras": {
+        "__value__": [
+          {
+            "name": "expression_helper_ANIME",
+            "strength": "1.00",
+            "active": true,
+            "expanded": false,
+            "clipStrength": "1.00",
+            "locked": false
+          },
+          {
+            "name": "p1ct01-000016",
+            "strength": 0.5,
+            "active": true,
+            "expanded": false,
+            "clipStrength": 0.5,
+            "locked": false
+          },
+          {
+            "name": "wlop-000015",
+            "strength": 0.8,
+            "active": true,
+            "expanded": false,
+            "clipStrength": 0.8,
+            "locked": false
+          },
+          {
+            "name": "anima-base-1-painterly-v2",
+            "strength": 0.8,
+            "active": true,
+            "expanded": false,
+            "clipStrength": 0.8,
+            "locked": false
+          },
+          {
+            "name": "Coruscant v1 EP11",
+            "strength": 0.5,
+            "active": true,
+            "expanded": false,
+            "clipStrength": 0.5,
+            "locked": false
+          },
+          {
+            "name": "AnimaNSS5anime",
+            "strength": 0.45,
+            "active": true,
+            "expanded": false,
+            "clipStrength": 0.45,
+            "locked": false
+          }
+        ]
+      },
+      "model": [
+        "4",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "Lora Loader (LoraManager)",
+    "_meta": {
+      "title": "1️⃣Lora堆（默认）"
+    }
+  }
+}

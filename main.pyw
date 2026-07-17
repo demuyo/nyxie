@@ -376,6 +376,7 @@ async def load_cogs():
         "cogs.owner",        
         "cogs.moderation",
         "cogs.monsterhunter",
+        "cogs.imagegen",
     ]
     
     for cog in cogs:
@@ -437,7 +438,7 @@ async def main():
     keep_alive() 
     await load_cogs()
     
-    token = TEST_TOKEN
+    token = TEST
     if not token:
         print("❌ ERRO: Nenhum token configurado!")
         return
