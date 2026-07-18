@@ -20,7 +20,7 @@ def get_prefix(bot, message):
         owner_cog = bot.get_cog('Owner')
         if owner_cog and str(message.guild.id) in owner_cog.prefixes:
             return owner_cog.prefixes[str(message.guild.id)]
-    return '!'
+    return '>'
 
 bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None)
 
